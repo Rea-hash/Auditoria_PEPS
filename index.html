@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoría Semáforo PEPS · VENTO Región 6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --navy:#161d2e;
+  --navy-2:#212b42;
+  --ink:#14171c;
+  --muted:#626a78;
+  --bg:#eef0f4;
+  --surface:#ffffff;
+  --border:#e1e5eb;
+  --green:#0f7a3d;
+  --green-bg:#dff5e6;
+  --amber:#a15c00;
+  --amber-bg:#fdf0d5;
+  --red:#b6231c;
+  --red-bg:#fbe2e0;
+  --negro:#1c2029;
+  --negro-bg:#e6e7ec;
+  --accent:#2454c7;
+  --accent-bg:#e7edfb;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.06);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.eyebrow{
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  font-size:11.5px;
+}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif; font-weight:800; margin:0;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  background:linear-gradient(135deg,var(--navy),var(--navy-2));
+  color:#fff;
+  padding:16px 22px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+  position:sticky; top:0; z-index:40;
+  box-shadow:var(--shadow);
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.semaforo-icon{
+  width:26px; display:flex; flex-direction:column; gap:3px;
+  background:#0c0f17; padding:6px 6px; border-radius:7px;
+  border:1px solid rgba(255,255,255,.12);
+}
+.semaforo-icon span{width:100%; padding-top:100%; border-radius:50%; display:block;}
+.semaforo-icon span:nth-child(1){background:#e5484d;}
+.semaforo-icon span:nth-child(2){background:#f5a524;}
+.semaforo-icon span:nth-child(3){background:#3dd06a;}
+.brand-text h1{font-size:22px; letter-spacing:.01em;}
+.brand-text .eyebrow{color:#9fb0d9;}
+.topbar-actions{display:flex; align-items:center; gap:10px; margin-left:auto; flex-wrap:wrap;}
+.file-btn{
+  position:relative; overflow:hidden;
+  display:inline-flex; align-items:center; gap:8px;
+  background:#fff; color:var(--navy);
+  font-weight:700; font-size:13.5px;
+  padding:9px 14px; border-radius:8px; cursor:pointer;
+  border:none;
+}
+.file-btn input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+.btn{
+  display:inline-flex; align-items:center; gap:7px;
+  font-weight:700; font-size:13.5px;
+  padding:9px 14px; border-radius:8px; cursor:pointer;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.06); color:#fff;
+}
+.btn:hover{background:rgba(255,255,255,.14);}
+.btn.primary{background:#3dd06a; color:#0c2a16; border-color:transparent;}
+.btn.primary:hover{background:#33ba5d;}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.save-status{font-size:12px; color:#b7c2de; min-width:120px;}
+
+/* ---------- Layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1440px; margin:0 auto;}
+.sidebar{
+  width:250px; flex:0 0 250px;
+  padding:18px 14px 40px;
+  position:sticky; top:78px;
+}
+.sidebar h3{font-size:14px; margin-bottom:10px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase;}
+.history-list{display:flex; flex-direction:column; gap:8px;}
+.history-item{
+  background:var(--surface); border:1px solid var(--border); border-radius:9px;
+  padding:10px 12px; font-size:13px; box-shadow:var(--shadow);
+}
+.history-item .d{font-weight:700; font-family:'Barlow Condensed'; font-size:16px;}
+.history-item .m{color:var(--muted); font-size:11.5px; margin:2px 0 8px;}
+.history-item button{
+  font-size:11.5px; border:none; background:var(--accent-bg); color:var(--accent);
+  padding:5px 9px; border-radius:6px; cursor:pointer; font-weight:700;
+}
+.empty-hist{font-size:12.5px; color:var(--muted); line-height:1.5;}
+
+main{flex:1; min-width:0; padding:20px 22px 60px;}
+
+/* ---------- Empty state ---------- */
+.empty-state{
+  background:var(--surface); border:1.5px dashed var(--border); border-radius:14px;
+  padding:60px 30px; text-align:center; color:var(--muted);
+}
+.empty-state h2{color:var(--ink); font-size:26px; margin-bottom:8px;}
+.empty-state p{max-width:440px; margin:0 auto 18px; font-size:14px; line-height:1.6;}
+
+/* ---------- KPIs ---------- */
+.kpis{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:16px;}
+.kpi{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:12px 14px; box-shadow:var(--shadow);
+}
+.kpi .n{font-family:'Barlow Condensed'; font-weight:800; font-size:28px; line-height:1;}
+.kpi .l{font-size:11.5px; color:var(--muted); margin-top:4px; letter-spacing:.02em;}
+.kpi.conforme .n{color:var(--green);}
+.kpi.hallazgo .n{color:var(--red);}
+.kpi.pendiente .n{color:var(--muted);}
+.kpi.avance .bar{height:6px; background:var(--border); border-radius:4px; margin-top:8px; overflow:hidden;}
+.kpi.avance .bar i{display:block; height:100%; background:var(--accent);}
+
+/* ---------- Filters ---------- */
+.filters{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:14px; margin-bottom:16px; box-shadow:var(--shadow);
+}
+.field{display:flex; flex-direction:column; gap:5px;}
+.field label{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+.field select, .field input[type=text]{
+  border:1px solid var(--border); border-radius:8px; padding:8px 10px;
+  font-size:13.5px; font-family:inherit; min-width:170px; background:#fbfcfd;
+}
+.field.search input{min-width:200px;}
+.clear-link{
+  border:none; background:none; color:var(--accent); font-weight:700; font-size:13px;
+  cursor:pointer; padding:8px 4px;
+}
+.filters .meta-tag{
+  margin-left:auto; font-size:12px; color:var(--muted); align-self:center;
+}
+
+/* ---------- Table ---------- */
+.table-wrap{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  overflow:auto; box-shadow:var(--shadow);
+}
+table{border-collapse:collapse; width:100%; min-width:1080px; font-size:13px;}
+thead th{
+  position:sticky; top:0; background:#f7f8fa; border-bottom:1px solid var(--border);
+  text-align:left; padding:10px 10px; font-size:10.5px; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;
+}
+tbody td{padding:8px 10px; border-bottom:1px solid #eef0f3; vertical-align:middle;}
+tbody tr:hover{background:#fafbfd;}
+tbody tr.row-hallazgo{background:#fff8f7;}
+tbody tr.row-hallazgo:hover{background:#fdefed;}
+td.ubic{max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+td.serie{font-family:'JetBrains Mono',monospace; font-size:12px; color:#333;}
+td center, .cbcell{text-align:center;}
+input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--green);}
+.badge{
+  display:inline-block; padding:3px 9px; border-radius:99px; font-size:11px; font-weight:700;
+  white-space:nowrap;
+}
+.badge.Verde{background:var(--green-bg); color:var(--green);}
+.badge.Amarillo{background:var(--amber-bg); color:var(--amber);}
+.badge.Rojo{background:var(--red-bg); color:var(--red);}
+.badge.Negro{background:var(--negro-bg); color:var(--negro);}
+.status{font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap;}
+.status.conforme{background:var(--green-bg); color:var(--green);}
+.status.hallazgo{background:var(--red-bg); color:var(--red);}
+.status.pendiente{background:#eef0f3; color:var(--muted);}
+.obs-input{
+  width:130px; border:1px solid var(--border); border-radius:6px; padding:5px 7px; font-size:12px; font-family:inherit;
+}
+.ok-btn{
+  border:1px solid var(--green); color:var(--green); background:#fff;
+  font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; cursor:pointer; white-space:nowrap;
+}
+.ok-btn:hover{background:var(--green-bg);}
+
+.pagination{display:flex; align-items:center; gap:10px; padding:12px 14px; font-size:12.5px; color:var(--muted);}
+.pagination button{
+  border:1px solid var(--border); background:#fff; border-radius:7px; padding:6px 11px;
+  cursor:pointer; font-weight:700; font-size:12.5px;
+}
+.pagination button:disabled{opacity:.4; cursor:not-allowed;}
+
+.footnote{font-size:12px; color:var(--muted); margin-top:12px; line-height:1.6;}
+
+/* ---------- Closure section ---------- */
+.closure{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:18px; margin-top:18px; box-shadow:var(--shadow);
+}
+.closure h3{font-size:19px; margin-bottom:12px;}
+.closure .field{width:100%; margin-bottom:16px;}
+.closure textarea{
+  width:100%; border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+  font-size:13.5px; font-family:inherit; resize:vertical; min-height:90px;
+}
+.file-btn.small{padding:8px 13px; font-size:12.5px; background:var(--accent-bg); color:var(--accent);}
+.photos-block{margin-top:6px;}
+.photo-hint{font-size:11.5px; color:var(--muted); margin:8px 0 12px;}
+.photo-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:14px;
+}
+.photo-card{
+  border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fbfcfd;
+  position:relative;
+}
+.photo-card img{width:100%; height:120px; object-fit:cover; display:block;}
+.photo-card .rm{
+  position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%;
+  background:rgba(20,23,28,.72); color:#fff; border:none; cursor:pointer; font-size:13px;
+  display:flex; align-items:center; justify-content:center; line-height:1;
+}
+.photo-card .cap{
+  width:100%; border:none; border-top:1px solid var(--border); padding:6px 8px;
+  font-size:11.5px; font-family:inherit; background:transparent;
+}
+.photo-empty{font-size:12.5px; color:var(--muted); padding:10px 0;}
+.storage-warn{font-size:11.5px; color:var(--red); margin-top:8px; display:none;}
+
+@media (max-width: 980px){
+  .layout{flex-direction:column;}
+  .sidebar{width:100%; flex:none; position:static; padding-bottom:6px;}
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  main{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="semaforo-icon"><span></span><span></span><span></span></div>
+    <div class="brand-text">
+      <div class="eyebrow">VENTO · Región 6 / Morelos</div>
+      <h1>Auditoría Semáforo PEPS</h1>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span class="save-status" id="saveStatus"></span>
+    <label class="file-btn">
+      📄 Cargar archivo del día
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </label>
+    <button class="btn primary" id="pdfBtn" disabled>⬇ Generar PDF de resumen</button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h3>Auditorías guardadas</h3>
+    <div class="history-list" id="historyList">
+      <div class="empty-hist">Aún no hay auditorías guardadas en este navegador. Al cargar un archivo, el progreso se guarda automáticamente por día.</div>
+    </div>
+  </aside>
+
+  <main>
+    <div id="emptyState" class="empty-state">
+      <h2>Sube el archivo de hoy para comenzar</h2>
+      <p>Carga el Excel de existencias (semáforo PEPS) de tus 23 agencias. Podrás filtrar por ubicación, modelo de planeación, año y semáforo, marcar existencia / color / batería por unidad, y cerrar el día con un PDF de resumen por agencia.</p>
+    </div>
+
+    <div id="content" style="display:none;">
+      <div class="kpis" id="kpis"></div>
+
+      <div class="filters">
+        <div class="field">
+          <label>Ubicación</label>
+          <select id="fUbicacion"><option value="">Todas las agencias</option></select>
+        </div>
+        <div class="field">
+          <label>Modelo de planeación</label>
+          <select id="fModelo"><option value="">Todos los modelos</option></select>
+        </div>
+        <div class="field">
+          <label>Año</label>
+          <select id="fAnio"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label>Semáforo</label>
+          <select id="fSemaforo"><option value="">Todos</option></select>
+        </div>
+        <div class="field search">
+          <label>Buscar serie / modelo</label>
+          <input type="text" id="fSearch" placeholder="Ej. 3MUAZ... o Alpina 300">
+        </div>
+        <button class="clear-link" id="clearFilters">Limpiar filtros</button>
+        <span class="meta-tag" id="fileMeta"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Agencia</th>
+              <th>Modelo</th>
+              <th>Serie</th>
+              <th>Año</th>
+              <th>Días</th>
+              <th>Semáforo</th>
+              <th style="text-align:center">Existencia</th>
+              <th style="text-align:center">Color</th>
+              <th style="text-align:center">Batería</th>
+              <th>Obs.</th>
+              <th></th>
+              <th>Estatus</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+      <div class="footnote">Un tono unido: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad conforme la revisas físicamente. El botón "PDF de resumen" siempre exporta el estado de las 23 agencias completas, sin importar el filtro activo en pantalla.</div>
+
+      <div class="closure">
+        <h3>Cierre de auditoría</h3>
+        <div class="field">
+          <label>Comentarios finales</label>
+          <textarea id="finalComments" placeholder="Observaciones generales del día, acuerdos con las agencias, seguimientos pendientes..."></textarea>
+        </div>
+        <div class="photos-block">
+          <label class="file-btn small">📷 Agregar fotos
+            <input type="file" id="photoInput" accept="image/*" multiple>
+          </label>
+          <div class="photo-hint">Las fotos se comprimen automáticamente y se guardan junto con la auditoría del día. Puedes agregar una nota corta a cada una.</div>
+          <div class="photo-grid" id="photoGrid"></div>
+          <div class="storage-warn" id="storageWarn">Las fotos están ocupando bastante espacio de guardado. Considera quitar alguna si el guardado automático empieza a fallar.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Storage adapter: uses window.storage when running inside the Claude artifact
+  // sandbox; falls back to the browser's own localStorage when the file is
+  // opened directly (double-clicked / downloaded), where window.storage doesn't exist.
+  var Store = (function(){
+    var hasNative = !!(window.storage && typeof window.storage.get === 'function');
+    function lsKey(key){ return 'vento_peps_'+key; }
+    return {
+      usingFallback: !hasNative,
+      get: function(key, shared){
+        if(hasNative) return window.storage.get(key, shared);
+        try{
+          var v = window.localStorage.getItem(lsKey(key));
+          return Promise.resolve(v===null ? null : {key:key, value:v, shared:!!shared});
+        }catch(e){ return Promise.resolve(null); }
+      },
+      set: function(key, value, shared){
+        if(hasNative) return window.storage.set(key, value, shared);
+        try{
+          window.localStorage.setItem(lsKey(key), value);
+          return Promise.resolve({key:key, value:value, shared:!!shared});
+        }catch(e){ return Promise.resolve(null); }
+      },
+      list: function(prefix, shared){
+        if(hasNative) return window.storage.list(prefix, shared);
+        try{
+          var keys = [];
+          var full = lsKey(prefix||'');
+          for(var i=0;i<window.localStorage.length;i++){
+            var k = window.localStorage.key(i);
+            if(k.indexOf('vento_peps_')===0){
+              var real = k.slice('vento_peps_'.length);
+              if(!prefix || real.indexOf(prefix)===0) keys.push(real);
+            }
+          }
+          return Promise.resolve({keys:keys, prefix:prefix, shared:!!shared});
+        }catch(e){ return Promise.resolve({keys:[]}); }
+      }
+    };
+  })();
+
+  var AppState = {
+    records: [],
+    checks: {},
+    filters: { ubicacion:'', modelo:'', anio:'', semaforo:'', search:'' },
+    page: 1,
+    pageSize: 25,
+    meta: { fileName:'', uploadedAt:'', dateKey:'' },
+    finalComments: '',
+    photos: []
+  };
+  var saveTimer = null;
+
+  // ---------- helpers ----------
+  function norm(h){ return String(h==null?'':h).trim().toLowerCase(); }
+  function findCol(headers, matchers){
+    for(var i=0;i<headers.length;i++){
+      var h = norm(headers[i]);
+      for(var j=0;j<matchers.length;j++){ if(h.indexOf(matchers[j])>-1) return i; }
+    }
+    return -1;
+  }
+  function todayKey(){
+    var d = new Date();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    return d.getFullYear()+'-'+m+'-'+day;
+  }
+  function fmtDateLabel(key){
+    var parts = key.split('-');
+    if(parts.length!==3) return key;
+    var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return parts[2]+' '+meses[parseInt(parts[1],10)-1]+' '+parts[0];
+  }
+  function setSaveStatus(txt){ document.getElementById('saveStatus').textContent = txt; }
+
+  // ---------- parsing ----------
+  function parseWorkbook(arrayBuffer){
+    var wb = XLSX.read(arrayBuffer, {type:'array'});
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+    if(!rows.length) return [];
+    var headers = rows[0].map(function(h){ return String(h==null?'':h).trim(); });
+    var idx = {
+      ubicacion: findCol(headers,['ubicaci']),
+      modelo: findCol(headers,['modelo']),
+      articulo: findCol(headers,['articulo','artículo']),
+      anio: findCol(headers,['año','ano','anio']),
+      serie: findCol(headers,['serie']),
+      dias: findCol(headers,['dias','días']),
+      semaforo: findCol(headers,['semáforo','semaforo']),
+      garantia: findCol(headers,['garant'])
+    };
+    var out = [];
+    for(var r=1;r<rows.length;r++){
+      var row = rows[r];
+      if(!row) continue;
+      var ubicRaw = idx.ubicacion>=0 ? row[idx.ubicacion] : null;
+      if(ubicRaw===null || ubicRaw===undefined) continue;
+      var ubic = String(ubicRaw).trim();
+      if(!ubic) continue;
+      var lower = ubic.toLowerCase();
+      if(lower.indexOf('filtros aplicados')>-1 || lower==='total') continue;
+      var serie = idx.serie>=0 ? String(row[idx.serie]==null?'':row[idx.serie]).trim() : '';
+      if(!serie) continue;
+      out.push({
+        id: serie + '__' + r,
+        ubicacion: ubic,
+        modelo: idx.modelo>=0 ? String(row[idx.modelo]==null?'':row[idx.modelo]).trim() : '',
+        articulo: idx.articulo>=0 ? String(row[idx.articulo]==null?'':row[idx.articulo]).trim() : '',
+        anio: idx.anio>=0 ? row[idx.anio] : '',
+        serie: serie,
+        dias: idx.dias>=0 ? row[idx.dias] : '',
+        semaforo: idx.semaforo>=0 ? String(row[idx.semaforo]==null?'':row[idx.semaforo]).trim() : '',
+        garantia: idx.garantia>=0 ? String(row[idx.garantia]==null?'':row[idx.garantia]).trim() : ''
+      });
+    }
+    return out;
+  }
+
+  // ---------- status ----------
+  function getStatus(id){
+    var c = AppState.checks[id];
+    if(!c) return 'pendiente';
+    if(c.existencia && c.color && c.bateria) return 'conforme';
+    return 'hallazgo';
+  }
+  function computeStats(records){
+    var total=records.length, conforme=0, hallazgo=0, pendiente=0;
+    for(var i=0;i<records.length;i++){
+      var st = getStatus(records[i].id);
+      if(st==='conforme') conforme++;
+      else if(st==='hallazgo') hallazgo++;
+      else pendiente++;
+    }
+    var revisadas = conforme+hallazgo;
+    return { total:total, conforme:conforme, hallazgo:hallazgo, pendiente:pendiente,
+      avance: total? Math.round(revisadas/total*100) : 0 };
+  }
+
+  // ---------- storage ----------
+  function scheduleSave(){
+    setSaveStatus('Guardando…');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 900);
+  }
+  function saveNow(){
+    if(!AppState.meta.dateKey) return;
+    var payload = JSON.stringify({ meta:AppState.meta, records:AppState.records, checks:AppState.checks, finalComments:AppState.finalComments, photos:AppState.photos });
+    updateStorageWarn(payload.length);
+    Store.set('auditoria:'+AppState.meta.dateKey, payload, false).then(function(res){
+      if(res) setSaveStatus('Guardado ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}));
+      else setSaveStatus('No se pudo guardar (revisa el tamaño de las fotos)');
+    }).catch(function(err){
+      console.error('storage.set error', err);
+      setSaveStatus('No se pudo guardar (revisa el tamaño de las fotos)');
+    });
+  }
+  function updateStorageWarn(byteLen){
+    var warnEl = document.getElementById('storageWarn');
+    if(!warnEl) return;
+    warnEl.style.display = (byteLen > 3.5*1024*1024) ? 'block' : 'none';
+  }
+  function loadDay(dateKey){
+    return Store.get('auditoria:'+dateKey, false).then(function(res){
+      if(!res) return null;
+      try { return JSON.parse(res.value); } catch(e){ return null; }
+    }).catch(function(){ return null; });
+  }
+  function refreshHistory(){
+    Store.list('auditoria:', false).then(function(res){
+      var listEl = document.getElementById('historyList');
+      var keys = (res && res.keys) ? res.keys.slice() : [];
+      if(!keys.length){
+        listEl.innerHTML = '<div class="empty-hist">Aún no hay auditorías guardadas en este navegador. Al cargar un archivo, el progreso se guarda automáticamente por día.</div>';
+        return;
+      }
+      keys.sort().reverse();
+      listEl.innerHTML = '';
+      keys.forEach(function(k){
+        var dateKey = k.replace('auditoria:','');
+        var item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = '<div class="d">'+fmtDateLabel(dateKey)+'</div><div class="m">'+dateKey+'</div>';
+        var btn = document.createElement('button');
+        btn.textContent = (dateKey===AppState.meta.dateKey) ? 'Auditoría activa' : 'Abrir';
+        if(dateKey===AppState.meta.dateKey) btn.disabled = true;
+        btn.addEventListener('click', function(){
+          loadDay(dateKey).then(function(data){
+            if(!data) return;
+            AppState.records = data.records || [];
+            AppState.checks = data.checks || {};
+            AppState.meta = data.meta || {dateKey:dateKey};
+            AppState.finalComments = data.finalComments || '';
+            AppState.photos = data.photos || [];
+            AppState.filters = { ubicacion:'', modelo:'', anio:'', semaforo:'', search:'' };
+            AppState.page = 1;
+            afterDataLoaded();
+          });
+        });
+        item.appendChild(btn);
+        listEl.appendChild(item);
+      });
+    }).catch(function(err){ console.error('storage.list error', err); });
+  }
+
+  // ---------- rendering ----------
+  function uniqueSorted(arr){
+    var seen = {}, out = [];
+    arr.forEach(function(v){
+      if(v===null || v===undefined || v==='') return;
+      var key = String(v);
+      if(!seen[key]){ seen[key]=true; out.push(v); }
+    });
+    out.sort(function(a,b){ return String(a).localeCompare(String(b),'es'); });
+    return out;
+  }
+  function populateFilterOptions(){
+    var ubicaciones = uniqueSorted(AppState.records.map(function(r){return r.ubicacion;}));
+    var modelos = uniqueSorted(AppState.records.map(function(r){return r.modelo;}));
+    var anios = uniqueSorted(AppState.records.map(function(r){return r.anio;})).sort(function(a,b){return a-b;});
+    var semaforoOrder = ['Rojo','Negro','Amarillo','Verde'];
+    var semaforosPresent = uniqueSorted(AppState.records.map(function(r){return r.semaforo;}));
+    var semaforos = semaforoOrder.filter(function(s){ return semaforosPresent.indexOf(s)>-1; })
+      .concat(semaforosPresent.filter(function(s){ return semaforoOrder.indexOf(s)===-1; }));
+
+    fillSelect('fUbicacion', ubicaciones, 'Todas las agencias');
+    fillSelect('fModelo', modelos, 'Todos los modelos');
+    fillSelect('fAnio', anios, 'Todos');
+    fillSelect('fSemaforo', semaforos, 'Todos');
+  }
+  function fillSelect(id, values, placeholder){
+    var sel = document.getElementById(id);
+    var current = sel.value;
+    sel.innerHTML = '<option value="">'+placeholder+'</option>';
+    values.forEach(function(v){
+      var opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+    if(values.indexOf(current)>-1 || current==='') sel.value = current;
+  }
+
+  function applyFilters(){
+    var f = AppState.filters;
+    return AppState.records.filter(function(r){
+      if(f.ubicacion && r.ubicacion !== f.ubicacion) return false;
+      if(f.modelo && r.modelo !== f.modelo) return false;
+      if(f.anio && String(r.anio) !== String(f.anio)) return false;
+      if(f.semaforo && r.semaforo !== f.semaforo) return false;
+      if(f.search){
+        var s = f.search.toLowerCase();
+        var hay = (r.serie||'').toLowerCase().indexOf(s)>-1 ||
+                  (r.modelo||'').toLowerCase().indexOf(s)>-1 ||
+                  (r.articulo||'').toLowerCase().indexOf(s)>-1;
+        if(!hay) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderKPIs(filtered){
+    var stats = computeStats(filtered);
+    var el = document.getElementById('kpis');
+    el.innerHTML =
+      kpiCard(stats.total,'Unidades en vista','') +
+      kpiCard(stats.conforme,'Conformes','conforme') +
+      kpiCard(stats.hallazgo,'Con hallazgos','hallazgo') +
+      kpiCard(stats.pendiente,'Pendientes','pendiente') +
+      '<div class="kpi avance"><div class="n">'+stats.avance+'%</div><div class="l">Avance de revisión</div>'+
+        '<div class="bar"><i style="width:'+stats.avance+'%"></i></div></div>' +
+      kpiCard(uniqueSorted(filtered.map(function(r){return r.ubicacion;})).length,'Agencias en vista','');
+  }
+  function kpiCard(n,label,cls){
+    return '<div class="kpi '+(cls||'')+'"><div class="n">'+n+'</div><div class="l">'+label+'</div></div>';
+  }
+
+  function renderTable(){
+    var filtered = applyFilters();
+    renderKPIs(filtered);
+    var totalPages = Math.max(1, Math.ceil(filtered.length / AppState.pageSize));
+    if(AppState.page > totalPages) AppState.page = totalPages;
+    var start = (AppState.page-1)*AppState.pageSize;
+    var pageRows = filtered.slice(start, start+AppState.pageSize);
+
+    var tbody = document.getElementById('tbody');
+    if(!pageRows.length){
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:30px;">Sin unidades para estos filtros.</td></tr>';
+    } else {
+      var html = pageRows.map(rowHtml).join('');
+      tbody.innerHTML = html;
+    }
+
+    var pag = document.getElementById('pagination');
+    pag.innerHTML =
+      '<button id="prevPage" '+(AppState.page<=1?'disabled':'')+'>‹ Anterior</button>' +
+      '<span>Página '+AppState.page+' de '+totalPages+' · '+filtered.length+' unidades</span>' +
+      '<button id="nextPage" '+(AppState.page>=totalPages?'disabled':'')+'>Siguiente ›</button>';
+    document.getElementById('prevPage').addEventListener('click', function(){ AppState.page--; renderTable(); });
+    document.getElementById('nextPage').addEventListener('click', function(){ AppState.page++; renderTable(); });
+  }
+
+  function rowHtml(r){
+    var c = AppState.checks[r.id] || {existencia:false,color:false,bateria:false,obs:''};
+    var st = getStatus(r.id);
+    var stLabel = st==='conforme' ? 'Conforme' : (st==='hallazgo' ? 'Hallazgo' : 'Pendiente');
+    return '<tr data-id="'+esc(r.id)+'" class="'+(st==='hallazgo'?'row-hallazgo':'')+'">'+
+      '<td class="ubic" title="'+esc(r.ubicacion)+'">'+esc(r.ubicacion)+'</td>'+
+      '<td>'+esc(r.modelo)+'</td>'+
+      '<td class="serie">'+esc(r.serie)+'</td>'+
+      '<td>'+esc(r.anio)+'</td>'+
+      '<td>'+esc(r.dias)+'</td>'+
+      '<td><span class="badge '+esc(r.semaforo)+'">'+esc(r.semaforo)+'</span></td>'+
+      '<td class="cbcell"><input type="checkbox" class="chk-existencia" '+(c.existencia?'checked':'')+'></td>'+
+      '<td class="cbcell"><input type="checkbox" class="chk-color" '+(c.color?'checked':'')+'></td>'+
+      '<td class="cbcell"><input type="checkbox" class="chk-bateria" '+(c.bateria?'checked':'')+'></td>'+
+      '<td><input type="text" class="obs-input" placeholder="Nota" value="'+esc(c.obs||'')+'"></td>'+
+      '<td><button class="ok-btn" type="button">✓ Todo OK</button></td>'+
+      '<td><span class="status '+st+'">'+stLabel+'</span></td>'+
+      '</tr>';
+  }
+  function esc(v){
+    return String(v==null?'':v).replace(/[&<>"']/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+
+  function ensureCheckEntry(id){
+    if(!AppState.checks[id]) AppState.checks[id] = {existencia:false,color:false,bateria:false,obs:''};
+    return AppState.checks[id];
+  }
+
+  document.getElementById('tbody').addEventListener('change', function(e){
+    var el = e.target;
+    var tr = el.closest('tr');
+    if(!tr) return;
+    var id = tr.getAttribute('data-id');
+    var entry = ensureCheckEntry(id);
+    if(el.classList.contains('chk-existencia')) entry.existencia = el.checked;
+    else if(el.classList.contains('chk-color')) entry.color = el.checked;
+    else if(el.classList.contains('chk-bateria')) entry.bateria = el.checked;
+    else return;
+    updateRowChrome(tr, id);
+    renderKPIs(applyFilters());
+    scheduleSave();
+  });
+  document.getElementById('tbody').addEventListener('input', function(e){
+    var el = e.target;
+    if(!el.classList.contains('obs-input')) return;
+    var tr = el.closest('tr');
+    if(!tr) return;
+    var id = tr.getAttribute('data-id');
+    var entry = ensureCheckEntry(id);
+    entry.obs = el.value;
+    scheduleSave();
+  });
+  document.getElementById('tbody').addEventListener('click', function(e){
+    var el = e.target;
+    if(!el.classList.contains('ok-btn')) return;
+    var tr = el.closest('tr');
+    if(!tr) return;
+    var id = tr.getAttribute('data-id');
+    var entry = ensureCheckEntry(id);
+    entry.existencia = true; entry.color = true; entry.bateria = true;
+    tr.querySelector('.chk-existencia').checked = true;
+    tr.querySelector('.chk-color').checked = true;
+    tr.querySelector('.chk-bateria').checked = true;
+    updateRowChrome(tr, id);
+    renderKPIs(applyFilters());
+    scheduleSave();
+  });
+  function updateRowChrome(tr, id){
+    var st = getStatus(id);
+    var stLabel = st==='conforme' ? 'Conforme' : (st==='hallazgo' ? 'Hallazgo' : 'Pendiente');
+    tr.classList.toggle('row-hallazgo', st==='hallazgo');
+    var badge = tr.querySelector('.status');
+    badge.className = 'status '+st;
+    badge.textContent = stLabel;
+  }
+
+  // ---------- filter controls ----------
+  ['fUbicacion','fModelo','fAnio','fSemaforo'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', function(e){
+      var map = {fUbicacion:'ubicacion', fModelo:'modelo', fAnio:'anio', fSemaforo:'semaforo'};
+      AppState.filters[map[id]] = e.target.value;
+      AppState.page = 1;
+      renderTable();
+    });
+  });
+  document.getElementById('fSearch').addEventListener('input', function(e){
+    AppState.filters.search = e.target.value;
+    AppState.page = 1;
+    renderTable();
+  });
+  document.getElementById('clearFilters').addEventListener('click', function(){
+    AppState.filters = { ubicacion:'', modelo:'', anio:'', semaforo:'', search:'' };
+    document.getElementById('fUbicacion').value = '';
+    document.getElementById('fModelo').value = '';
+    document.getElementById('fAnio').value = '';
+    document.getElementById('fSemaforo').value = '';
+    document.getElementById('fSearch').value = '';
+    AppState.page = 1;
+    renderTable();
+  });
+
+  // ---------- file upload ----------
+  document.getElementById('fileInput').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var records;
+      try{
+        records = parseWorkbook(ev.target.result);
+      }catch(err){
+        console.error(err);
+        alert('No se pudo leer el archivo. Verifica que sea el export de existencias en formato .xlsx');
+        return;
+      }
+      if(!records.length){
+        alert('No se encontraron filas de unidades en el archivo.');
+        return;
+      }
+      var dateKey = todayKey();
+      loadDay(dateKey).then(function(existing){
+        AppState.records = records;
+        AppState.checks = (existing && existing.checks) ? existing.checks : {};
+        AppState.meta = { fileName:file.name, uploadedAt: new Date().toISOString(), dateKey: dateKey };
+        AppState.finalComments = (existing && existing.finalComments) ? existing.finalComments : '';
+        AppState.photos = (existing && existing.photos) ? existing.photos : [];
+        AppState.filters = { ubicacion:'', modelo:'', anio:'', semaforo:'', search:'' };
+        AppState.page = 1;
+        afterDataLoaded();
+        saveNow();
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  function afterDataLoaded(){
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    document.getElementById('pdfBtn').disabled = false;
+    document.getElementById('fUbicacion').value = '';
+    document.getElementById('fModelo').value = '';
+    document.getElementById('fAnio').value = '';
+    document.getElementById('fSemaforo').value = '';
+    document.getElementById('fSearch').value = '';
+    populateFilterOptions();
+    renderTable();
+    document.getElementById('finalComments').value = AppState.finalComments || '';
+    renderPhotos();
+    var meta = AppState.meta;
+    document.getElementById('fileMeta').textContent = meta.fileName ?
+      ('Archivo: '+meta.fileName+' · Auditoría del '+fmtDateLabel(meta.dateKey)) :
+      ('Auditoría del '+fmtDateLabel(meta.dateKey));
+    refreshHistory();
+  }
+
+  // ---------- closure: final comments & photos ----------
+  document.getElementById('finalComments').addEventListener('input', function(e){
+    AppState.finalComments = e.target.value;
+    scheduleSave();
+  });
+
+  function resizeImageFile(file, maxDim, quality){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        var img = new Image();
+        img.onload = function(){
+          var w = img.width, h = img.height;
+          if(w > h){ if(w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; } }
+          else { if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; } }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = function(){ reject(new Error('No se pudo leer la imagen')); };
+        img.src = ev.target.result;
+      };
+      reader.onerror = function(){ reject(new Error('No se pudo leer el archivo')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('photoInput').addEventListener('change', function(e){
+    var files = Array.prototype.slice.call(e.target.files || []);
+    if(!files.length) return;
+    Promise.all(files.map(function(f){
+      return resizeImageFile(f, 1000, 0.6).then(function(dataUrl){
+        return { id: 'p'+Date.now()+Math.random().toString(36).slice(2,7), dataUrl: dataUrl, caption:'' };
+      }).catch(function(err){ console.error(err); return null; });
+    })).then(function(results){
+      results.forEach(function(p){ if(p) AppState.photos.push(p); });
+      renderPhotos();
+      scheduleSave();
+      e.target.value = '';
+    });
+  });
+
+  function renderPhotos(){
+    var grid = document.getElementById('photoGrid');
+    if(!AppState.photos.length){
+      grid.innerHTML = '<div class="photo-empty">Sin fotos agregadas todavía.</div>';
+      return;
+    }
+    grid.innerHTML = AppState.photos.map(function(p){
+      return '<div class="photo-card" data-id="'+esc(p.id)+'">'+
+        '<img src="'+p.dataUrl+'" alt="Foto de auditoría">'+
+        '<button class="rm" type="button" title="Quitar foto">×</button>'+
+        '<input type="text" class="cap" placeholder="Nota de la foto" value="'+esc(p.caption||'')+'">'+
+        '</div>';
+    }).join('');
+  }
+  document.getElementById('photoGrid').addEventListener('click', function(e){
+    if(!e.target.classList.contains('rm')) return;
+    var card = e.target.closest('.photo-card');
+    var id = card.getAttribute('data-id');
+    AppState.photos = AppState.photos.filter(function(p){ return p.id !== id; });
+    renderPhotos();
+    scheduleSave();
+  });
+  document.getElementById('photoGrid').addEventListener('input', function(e){
+    if(!e.target.classList.contains('cap')) return;
+    var card = e.target.closest('.photo-card');
+    var id = card.getAttribute('data-id');
+    var photo = AppState.photos.filter(function(p){ return p.id === id; })[0];
+    if(photo){ photo.caption = e.target.value; scheduleSave(); }
+  });
+
+  // ---------- PDF export (always full dataset, all agencies) ----------
+  document.getElementById('pdfBtn').addEventListener('click', function(){
+    if(!AppState.records.length) return;
+    var jsPDFCtor = window.jspdf.jsPDF;
+    var doc = new jsPDFCtor({ unit:'pt', format:'letter' });
+    var pageWidth = doc.internal.pageSize.getWidth();
+    var margin = 40;
+
+    var globalStats = computeStats(AppState.records);
+    var todayLabel = new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.text('Auditoría de Semáforo PEPS · VENTO Región 6 / Morelos', margin, 50);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(90);
+    doc.text('Fecha de generación: '+todayLabel+'   ·   Auditoría del día: '+fmtDateLabel(AppState.meta.dateKey||todayKey())+'   ·   Archivo base: '+(AppState.meta.fileName||'—'), margin, 66);
+    doc.setTextColor(20);
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Resumen ejecutivo', margin, 92);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    var resumenLinea = 'Unidades totales: '+globalStats.total+'   |   Conformes: '+globalStats.conforme+
+      '   |   Con hallazgos: '+globalStats.hallazgo+'   |   Pendientes: '+globalStats.pendiente+
+      '   |   Avance de revisión: '+globalStats.avance+'%';
+    doc.text(resumenLinea, margin, 108);
+
+    // per-agency table
+    var agencyMap = {};
+    AppState.records.forEach(function(r){
+      if(!agencyMap[r.ubicacion]) agencyMap[r.ubicacion] = {total:0, conforme:0, hallazgo:0, pendiente:0, sinExistencia:0};
+      var m = agencyMap[r.ubicacion];
+      m.total++;
+      var st = getStatus(r.id);
+      if(st==='conforme') m.conforme++;
+      else if(st==='hallazgo'){
+        m.hallazgo++;
+        var c = AppState.checks[r.id];
+        if(c && !c.existencia) m.sinExistencia++;
+      } else m.pendiente++;
+    });
+    var agencyRows = Object.keys(agencyMap).sort().map(function(name){
+      var m = agencyMap[name];
+      var avance = m.total ? Math.round((m.conforme+m.hallazgo)/m.total*100) : 0;
+      return [name, m.total, m.conforme, m.hallazgo, m.pendiente, m.sinExistencia, avance+'%'];
+    });
+
+    doc.autoTable({
+      startY: 122,
+      margin: {left:margin, right:margin},
+      head: [['Agencia','Total','Conformes','Hallazgos','Pendientes','Sin existencia','Avance']],
+      body: agencyRows,
+      styles: {fontSize:8.5, cellPadding:4},
+      headStyles: {fillColor:[22,29,46], textColor:255, fontStyle:'bold'},
+      alternateRowStyles: {fillColor:[246,247,249]},
+      columnStyles: {0:{cellWidth:190}}
+    });
+
+    // findings detail
+    var hallazgoRecords = AppState.records.filter(function(r){ return getStatus(r.id)==='hallazgo'; });
+    var afterAgencyY = doc.lastAutoTable.finalY + 22;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Detalle de unidades con hallazgos ('+hallazgoRecords.length+')', margin, afterAgencyY);
+
+    if(hallazgoRecords.length){
+      var findingRows = hallazgoRecords.map(function(r){
+        var c = AppState.checks[r.id] || {};
+        return [
+          r.ubicacion, r.modelo, r.serie, r.semaforo,
+          c.existencia ? 'OK' : 'FALTA',
+          c.color ? 'OK' : 'FALTA',
+          c.bateria ? 'OK' : 'FALTA',
+          c.obs || ''
+        ];
+      });
+      doc.autoTable({
+        startY: afterAgencyY + 10,
+        margin: {left:margin, right:margin},
+        head: [['Agencia','Modelo','Serie','Semáforo','Existencia','Color','Batería','Observaciones']],
+        body: findingRows,
+        styles: {fontSize:7.8, cellPadding:3.5},
+        headStyles: {fillColor:[182,35,28], textColor:255, fontStyle:'bold'},
+        alternateRowStyles: {fillColor:[251,236,235]},
+        columnStyles: {0:{cellWidth:110}, 2:{cellWidth:95}, 7:{cellWidth:110}},
+        didParseCell: function(data){
+          if(data.section==='body' && [4,5,6].indexOf(data.column.index)>-1 && data.cell.raw==='FALTA'){
+            data.cell.styles.textColor = [182,35,28];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      });
+    } else {
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text('Sin hallazgos registrados en la auditoría cargada.', margin, afterAgencyY + 16);
+    }
+
+    // final comments
+    if(AppState.finalComments && AppState.finalComments.trim()){
+      doc.addPage();
+      doc.setFont('helvetica','bold'); doc.setFontSize(12);
+      doc.text('Comentarios finales de la auditoría', margin, 50);
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      var wrappedComments = doc.splitTextToSize(AppState.finalComments, pageWidth - margin*2);
+      doc.text(wrappedComments, margin, 70);
+    }
+
+    // photo evidence
+    if(AppState.photos && AppState.photos.length){
+      var pageH = doc.internal.pageSize.getHeight();
+      AppState.photos.forEach(function(photo, i){
+        doc.addPage();
+        doc.setFont('helvetica','bold'); doc.setFontSize(11);
+        doc.text('Evidencia fotográfica ('+(i+1)+' de '+AppState.photos.length+')', margin, 50);
+        var maxImgW = pageWidth - margin*2;
+        var maxImgH = pageH - 150;
+        try{
+          var props = doc.getImageProperties(photo.dataUrl);
+          var ratio = props.width / props.height;
+          var w = maxImgW, h = w / ratio;
+          if(h > maxImgH){ h = maxImgH; w = h * ratio; }
+          doc.addImage(photo.dataUrl, 'JPEG', margin, 66, w, h);
+          if(photo.caption){
+            doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90);
+            doc.text(doc.splitTextToSize(photo.caption, maxImgW), margin, 66 + h + 16);
+            doc.setTextColor(20);
+          }
+        }catch(err){ console.error('addImage error', err); }
+      });
+    }
+
+    // footer page numbers
+    var pageCount = doc.internal.getNumberOfPages();
+    for(var p=1; p<=pageCount; p++){
+      doc.setPage(p);
+      doc.setFontSize(8); doc.setTextColor(140);
+      doc.text('VENTO Región 6 · Auditoría Semáforo PEPS · Página '+p+' de '+pageCount, margin, doc.internal.pageSize.getHeight()-20);
+    }
+
+    doc.save('auditoria_semaforo_peps_'+(AppState.meta.dateKey||todayKey())+'.pdf');
+  });
+
+  // ---------- init ----------
+  function init(){
+    if(Store.usingFallback){
+      setSaveStatus('Guardado local en este navegador');
+    }
+    var dateKey = todayKey();
+    loadDay(dateKey).then(function(existing){
+      if(existing && existing.records && existing.records.length){
+        AppState.records = existing.records;
+        AppState.checks = existing.checks || {};
+        AppState.meta = existing.meta || {dateKey:dateKey};
+        AppState.finalComments = existing.finalComments || '';
+        AppState.photos = existing.photos || [];
+        afterDataLoaded();
+      } else {
+        refreshHistory();
+      }
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>
