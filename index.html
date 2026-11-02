@@ -517,11 +517,12 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   var saveTimer = null;
 
   // ---------- helpers ----------
-  function norm(h){ return String(h==null?'':h).trim().toLowerCase(); }
+  // Accent- and case-insensitive so "AÑO"/"Año"/"Ano" or "Ubicación"/"UBICACION" all match.
+  function norm(h){ return String(h==null?'':h).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
   function findCol(headers, matchers){
     for(var i=0;i<headers.length;i++){
       var h = norm(headers[i]);
-      for(var j=0;j<matchers.length;j++){ if(h.indexOf(matchers[j])>-1) return i; }
+      for(var j=0;j<matchers.length;j++){ if(h.indexOf(norm(matchers[j]))>-1) return i; }
     }
     return -1;
   }
@@ -545,19 +546,28 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     var ws = wb.Sheets[wb.SheetNames[0]];
     var rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
     if(!rows.length) return [];
-    var headers = rows[0].map(function(h){ return String(h==null?'':h).trim(); });
+    // Two exports are supported and detected by their headers:
+    //  - Export PEPS: Ubicación, MODELO PLANEACION, ARTICULO, AÑO, Número de Serie, Dias antigüedad, Semáforo, Tickets.Garantía
+    //  - Inventario General: Agencia, Serie, Modelo, Artículo, Días antigüedad, Semáforo (año comes from the article code)
+    // The header row is the first of the top 10 rows that names both a location and a serial column.
+    var headerRow = 0;
+    for(var h=0; h<Math.min(rows.length,10); h++){
+      var cand = (rows[h]||[]).map(function(c){ return String(c==null?'':c); });
+      if(findCol(cand,['ubicaci','agencia'])>-1 && findCol(cand,['serie'])>-1){ headerRow = h; break; }
+    }
+    var headers = (rows[headerRow]||[]).map(function(h){ return String(h==null?'':h).trim(); });
     var idx = {
       ubicacion: findCol(headers,['ubicaci','agencia']),
       modelo: findCol(headers,['modelo']),
-      articulo: findCol(headers,['articulo','artículo']),
-      anio: findCol(headers,['año','ano','anio']),
+      articulo: findCol(headers,['articulo']),
+      anio: findCol(headers,['año','anio']),
       serie: findCol(headers,['serie']),
-      dias: findCol(headers,['dias','días']),
-      semaforo: findCol(headers,['semáforo','semaforo']),
+      dias: findCol(headers,['dias']),
+      semaforo: findCol(headers,['semaforo']),
       garantia: findCol(headers,['garant'])
     };
     var out = [];
-    for(var r=1;r<rows.length;r++){
+    for(var r=headerRow+1;r<rows.length;r++){
       var row = rows[r];
       if(!row) continue;
       var ubicRaw = idx.ubicacion>=0 ? row[idx.ubicacion] : null;
