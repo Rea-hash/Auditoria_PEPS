@@ -547,7 +547,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     if(!rows.length) return [];
     var headers = rows[0].map(function(h){ return String(h==null?'':h).trim(); });
     var idx = {
-      ubicacion: findCol(headers,['ubicaci']),
+      ubicacion: findCol(headers,['ubicaci','agencia']),
       modelo: findCol(headers,['modelo']),
       articulo: findCol(headers,['articulo','artículo']),
       anio: findCol(headers,['año','ano','anio']),
@@ -568,12 +568,21 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       if(lower.indexOf('filtros aplicados')>-1 || lower==='total') continue;
       var serie = idx.serie>=0 ? String(row[idx.serie]==null?'':row[idx.serie]).trim() : '';
       if(!serie) continue;
+      var articulo = idx.articulo>=0 ? String(row[idx.articulo]==null?'':row[idx.articulo]).trim() : '';
+      var modelo = idx.modelo>=0 ? String(row[idx.modelo]==null?'':row[idx.modelo]).trim() : '';
+      var anio = idx.anio>=0 ? row[idx.anio] : '';
+      // Exports without Modelo/Año carry both in the article code: MODELO/COLOR-AÑO (e.g. NITROX250T3/GE-2026).
+      if(!modelo && articulo) modelo = articulo.split('/')[0].trim();
+      if((anio===null || anio==='') && articulo){
+        var m = articulo.match(/-(\d{4})\s*$/);
+        anio = m ? parseInt(m[1],10) : '';
+      }
       out.push({
         id: serie + '__' + r,
         ubicacion: ubic,
-        modelo: idx.modelo>=0 ? String(row[idx.modelo]==null?'':row[idx.modelo]).trim() : '',
-        articulo: idx.articulo>=0 ? String(row[idx.articulo]==null?'':row[idx.articulo]).trim() : '',
-        anio: idx.anio>=0 ? row[idx.anio] : '',
+        modelo: modelo,
+        articulo: articulo,
+        anio: anio,
         serie: serie,
         dias: idx.dias>=0 ? row[idx.dias] : '',
         semaforo: idx.semaforo>=0 ? String(row[idx.semaforo]==null?'':row[idx.semaforo]).trim() : '',
