@@ -248,6 +248,25 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 .photo-empty{font-size:12.5px; color:var(--muted); padding:10px 0;}
 .storage-warn{font-size:11.5px; color:var(--red); margin-top:8px; display:none;}
 
+/* ---------- Report scope / icons / focus ---------- */
+.ico{width:16px; height:16px; flex:none; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+.report-scope{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  font-size:13px; line-height:1.5; color:var(--amber);
+  background:var(--amber-bg); border:1px solid #f3dcae; border-radius:10px;
+  padding:10px 14px; margin-bottom:12px;
+}
+.report-scope.ready{color:var(--green); background:var(--green-bg); border-color:#bfe8cc;}
+.report-scope .muted{color:var(--muted);}
+.primary-filter select{border-color:var(--accent); font-weight:600;}
+.btn, .file-btn, .ok-btn, .clear-link, .pagination button, .history-item button{transition:background-color .15s, border-color .15s, opacity .15s;}
+.file-btn:focus-within, .btn:focus-visible{outline:2px solid #9fb0d9; outline-offset:2px;}
+.file-btn.small:focus-within, select:focus-visible, input:focus-visible, textarea:focus-visible,
+.ok-btn:focus-visible, .clear-link:focus-visible, .pagination button:focus-visible, .history-item button:focus-visible, .photo-card .rm:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px;
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+
 @media (max-width: 980px){
   .layout{flex-direction:column;}
   .sidebar{width:100%; flex:none; position:static; padding-bottom:6px;}
@@ -269,10 +288,14 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   <div class="topbar-actions">
     <span class="save-status" id="saveStatus"></span>
     <label class="file-btn">
-      📄 Cargar archivo del día
-      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+      Cargar archivo del día
+      <input type="file" id="fileInput" accept=".xlsx,.xls" aria-label="Cargar archivo de existencias del día">
     </label>
-    <button class="btn primary" id="pdfBtn" disabled>⬇ Generar PDF de resumen</button>
+    <button class="btn primary" id="pdfBtn" disabled title="Selecciona una agencia para generar el reporte">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+      Generar reporte PDF
+    </button>
   </div>
 </div>
 
@@ -287,7 +310,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   <main>
     <div id="emptyState" class="empty-state">
       <h2>Sube el archivo de hoy para comenzar</h2>
-      <p>Carga el Excel de existencias (semáforo PEPS) de tus 23 agencias. Podrás filtrar por ubicación, modelo de planeación, año y semáforo, marcar existencia / color / batería por unidad, y cerrar el día con un PDF de resumen por agencia.</p>
+      <p>Carga el Excel de existencias (semáforo PEPS) de tus 23 agencias. Podrás filtrar por ubicación, modelo de planeación, año y semáforo, marcar existencia / color / batería por unidad, y cerrar el día con un reporte PDF de incidencias de la agencia auditada, en una sola hoja.</p>
     </div>
 
     <div id="content" style="display:none;">
@@ -301,8 +324,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
             <option value="no_battery">Auditoría sin baterías</option>
           </select>
         </div>
-        <div class="field">
-          <label>Ubicación</label>
+        <div class="field primary-filter">
+          <label for="fUbicacion">Ubicación (agencia)</label>
           <select id="fUbicacion"><option value="">Todas las agencias</option></select>
         </div>
         <div class="field">
@@ -324,6 +347,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
         <button class="clear-link" id="clearFilters">Limpiar filtros</button>
         <span class="meta-tag" id="fileMeta"></span>
       </div>
+
+      <div class="report-scope" id="reportScope" role="status" aria-live="polite"></div>
 
       <div class="table-wrap">
         <table>
@@ -347,7 +372,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
         </table>
         <div class="pagination" id="pagination"></div>
       </div>
-      <div class="footnote" id="auditFootnote">Un tono unido: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad conforme la revisas físicamente. El botón "PDF de resumen" siempre exporta el conjunto completo de unidades cargadas, sin importar el filtro activo en pantalla.</div>
+      <div class="footnote" id="auditFootnote">Un tono unido: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad conforme la revisas físicamente. El reporte PDF incluye solo la agencia y los filtros activos en pantalla, en una sola hoja.</div>
 
       <div class="closure">
         <h3>Cierre de auditoría</h3>
@@ -356,7 +381,9 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
           <textarea id="finalComments" placeholder="Observaciones generales del día, acuerdos con las agencias, seguimientos pendientes..."></textarea>
         </div>
         <div class="photos-block">
-          <label class="file-btn small">📷 Agregar fotos
+          <label class="file-btn small">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Agregar fotos
             <input type="file" id="photoInput" accept="image/*" multiple>
           </label>
           <div class="photo-hint">Las fotos se comprimen automáticamente y se guardan junto con la auditoría del día. Puedes agregar una nota corta a cada una.</div>
@@ -674,6 +701,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       '<button id="nextPage" '+(AppState.page>=totalPages?'disabled':'')+'>Siguiente ›</button>';
     document.getElementById('prevPage').addEventListener('click', function(){ AppState.page--; renderTable(); });
     document.getElementById('nextPage').addEventListener('click', function(){ AppState.page++; renderTable(); });
+    updateReportScopeUI();
   }
 
   function rowHtml(r){
@@ -687,10 +715,10 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       '<td>'+esc(r.anio)+'</td>'+
       '<td>'+esc(r.dias)+'</td>'+
       '<td><span class="badge '+esc(r.semaforo)+'">'+esc(r.semaforo)+'</span></td>'+
-      '<td class="cbcell"><input type="checkbox" class="chk-existencia" '+(c.existencia?'checked':'')+'></td>'+
-      '<td class="cbcell"><input type="checkbox" class="chk-color" '+(c.color?'checked':'')+'></td>'+
-      '<td class="cbcell battery-cell '+(AppState.auditMode==='no_battery'?'battery-col-disabled':'')+'"><input type="checkbox" class="chk-bateria" '+(c.bateria?'checked':'')+' '+(AppState.auditMode==='no_battery'?'disabled title="No evaluada en esta modalidad"':'')+'></td>'+
-      '<td><input type="text" class="obs-input" placeholder="Nota" value="'+esc(c.obs||'')+'"></td>'+
+      '<td class="cbcell"><input type="checkbox" class="chk-existencia" aria-label="Existencia '+esc(r.serie)+'" '+(c.existencia?'checked':'')+'></td>'+
+      '<td class="cbcell"><input type="checkbox" class="chk-color" aria-label="Color '+esc(r.serie)+'" '+(c.color?'checked':'')+'></td>'+
+      '<td class="cbcell battery-cell '+(AppState.auditMode==='no_battery'?'battery-col-disabled':'')+'"><input type="checkbox" class="chk-bateria" aria-label="Batería '+esc(r.serie)+'" '+(c.bateria?'checked':'')+' '+(AppState.auditMode==='no_battery'?'disabled title="No evaluada en esta modalidad"':'')+'></td>'+
+      '<td><input type="text" class="obs-input" placeholder="Nota" aria-label="Observación '+esc(r.serie)+'" value="'+esc(c.obs||'')+'"></td>'+
       '<td><button class="ok-btn" type="button">✓ Todo OK</button></td>'+
       '<td><span class="status '+st+'">'+stLabel+'</span></td>'+
       '</tr>';
@@ -718,6 +746,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     else return;
     updateRowChrome(tr, id);
     renderKPIs(applyFilters());
+    updateReportScopeUI();
     scheduleSave();
   });
   document.getElementById('tbody').addEventListener('input', function(e){
@@ -744,6 +773,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     if(AppState.auditMode==='complete') tr.querySelector('.chk-bateria').checked = true;
     updateRowChrome(tr, id);
     renderKPIs(applyFilters());
+    updateReportScopeUI();
     scheduleSave();
   });
   function updateRowChrome(tr, id){
@@ -768,8 +798,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     document.getElementById('auditMode').value = AppState.auditMode;
     document.getElementById('batteryHeader').classList.toggle('battery-col-disabled', noBattery);
     document.getElementById('auditFootnote').innerHTML = noBattery
-      ? 'Modalidad <b>Auditoría sin baterías</b>: valida <b>Existencia</b> y <b>Color</b>. La batería queda como no evaluada y no genera hallazgos. El PDF siempre exporta el conjunto completo de unidades cargadas.'
-      : 'Modalidad <b>Auditoría completa</b>: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad. El PDF siempre exporta el conjunto completo de unidades cargadas.';
+      ? 'Modalidad <b>Auditoría sin baterías</b>: valida <b>Existencia</b> y <b>Color</b>. La batería queda como no evaluada y no genera hallazgos. El reporte PDF incluye solo la agencia y los filtros activos, en una sola hoja.'
+      : 'Modalidad <b>Auditoría completa</b>: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad. El reporte PDF incluye solo la agencia y los filtros activos, en una sola hoja.';
   }
 
   // ---------- filter controls ----------
@@ -835,7 +865,6 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   function afterDataLoaded(){
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('content').style.display = 'block';
-    document.getElementById('pdfBtn').disabled = false;
     document.getElementById('fUbicacion').value = '';
     document.getElementById('fModelo').value = '';
     document.getElementById('fAnio').value = '';
@@ -906,7 +935,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     grid.innerHTML = AppState.photos.map(function(p){
       return '<div class="photo-card" data-id="'+esc(p.id)+'">'+
         '<img src="'+p.dataUrl+'" alt="Foto de auditoría">'+
-        '<button class="rm" type="button" title="Quitar foto">×</button>'+
+        '<button class="rm" type="button" title="Quitar foto" aria-label="Quitar foto">×</button>'+
         '<input type="text" class="cap" placeholder="Nota de la foto" value="'+esc(p.caption||'')+'">'+
         '</div>';
     }).join('');
@@ -927,168 +956,273 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     if(photo){ photo.caption = e.target.value; scheduleSave(); }
   });
 
-  // ---------- PDF export (always full dataset, all agencies) ----------
-  document.getElementById('pdfBtn').addEventListener('click', function(){
-    if(!AppState.records.length) return;
-    var jsPDFCtor = window.jspdf.jsPDF;
-    var doc = new jsPDFCtor({ unit:'pt', format:'letter' });
-    var pageWidth = doc.internal.pageSize.getWidth();
-    var margin = 40;
+  // ---------- report scope (what the PDF will contain) ----------
+  // The PDF covers exactly the filtered view, and only when that view is a single agency.
+  function reportScope(){
+    var records = applyFilters();
+    var agencies = uniqueSorted(records.map(function(r){ return r.ubicacion; }));
+    return { records: records, agencies: agencies, ready: agencies.length === 1 };
+  }
+  function activeExtraFilters(){
+    var f = AppState.filters, out = [];
+    if(f.modelo) out.push('Modelo '+f.modelo);
+    if(f.anio) out.push('Año '+f.anio);
+    if(f.semaforo) out.push('Semáforo '+f.semaforo);
+    if(f.search) out.push('Búsqueda "'+f.search+'"');
+    return out;
+  }
+  function updateReportScopeUI(){
+    var scope = reportScope();
+    var btn = document.getElementById('pdfBtn');
+    var el = document.getElementById('reportScope');
+    btn.disabled = !scope.ready;
+    if(scope.ready){
+      var stats = computeStats(scope.records);
+      var extra = activeExtraFilters();
+      btn.title = 'Generar reporte de incidencias de '+scope.agencies[0];
+      el.className = 'report-scope ready';
+      el.innerHTML = '<b>Reporte PDF:</b> '+esc(scope.agencies[0])+' · '+stats.total+' unidades · '+
+        stats.hallazgo+' incidencias'+(stats.pendiente ? ' · '+stats.pendiente+' pendientes' : '')+
+        (extra.length ? ' <span class="muted">· con filtros: '+esc(extra.join(', '))+'</span>' : '');
+    } else {
+      btn.title = 'Selecciona una agencia para generar el reporte';
+      el.className = 'report-scope';
+      el.innerHTML = scope.agencies.length
+        ? 'Selecciona una agencia en <b>Ubicación</b> para generar el reporte PDF de incidencias ('+scope.agencies.length+' agencias en vista).'
+        : 'No hay unidades en vista con los filtros actuales.';
+    }
+  }
 
-    var globalStats = computeStats(AppState.records);
-    var hallazgoPct = globalStats.total ? (globalStats.hallazgo/globalStats.total*100).toFixed(1) : '0.0';
-    var auditModeLabel = AppState.auditMode==='no_battery' ? 'Auditoría sin baterías' : 'Auditoría completa';
-    var todayLabel = new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
+  // ---------- PDF export (filtered agency, single letter sheet) ----------
+  // Each step trades readability for room; the first one that fits on one sheet wins.
+  var PDF_FIT_STEPS = [
+    {font:8, pad:3.2}, {font:7.2, pad:2.5}, {font:6.5, pad:1.9}, {font:5.8, pad:1.4}
+  ];
+  var PDF_COLORS = {
+    navy:[22,29,46], ink:[20,23,28], muted:[98,106,120], border:[225,229,235],
+    green:[15,122,61], greenBg:[223,245,230], red:[182,35,28],
+    amber:[161,92,0], negro:[28,32,41], accent:[36,84,199], zebra:[247,248,250]
+  };
+  var SEMAFORO_PDF = { Verde:PDF_COLORS.green, Amarillo:PDF_COLORS.amber, Rojo:PDF_COLORS.red, Negro:PDF_COLORS.negro };
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(16);
-    doc.text('Auditoría de Semáforo PEPS · VENTO Región 6 / Morelos', margin, 50);
-    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(90);
-    doc.text('Fecha de generación: '+todayLabel+'   ·   Auditoría del día: '+fmtDateLabel(AppState.meta.dateKey||todayKey())+'   ·   Archivo base: '+(AppState.meta.fileName||'—'), margin, 66);
-    doc.text('Modalidad: '+auditModeLabel, margin, 78);
-    doc.setTextColor(20);
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(11);
-    doc.text('Resumen ejecutivo', margin, 98);
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    var resumenLinea = 'Unidades totales: '+globalStats.total+'   |   Conformes: '+globalStats.conforme+
-      '   |   Con hallazgos: '+globalStats.hallazgo+'   |   Pendientes: '+globalStats.pendiente+
-      '   |   Inventario con hallazgos: '+hallazgoPct+'%   |   Avance: '+globalStats.avance+'%';
-    var resumenLineas = doc.splitTextToSize(resumenLinea, pageWidth-margin*2);
-    doc.text(resumenLineas, margin, 114);
-
-    // per-agency table
-    var agencyMap = {};
-    AppState.records.forEach(function(r){
-      if(!agencyMap[r.ubicacion]) agencyMap[r.ubicacion] = {total:0, conforme:0, hallazgo:0, pendiente:0, sinExistencia:0};
-      var m = agencyMap[r.ubicacion];
-      m.total++;
-      var st = getStatus(r.id);
-      if(st==='conforme') m.conforme++;
-      else if(st==='hallazgo'){
-        m.hallazgo++;
-        var c = AppState.checks[r.id];
-        if(c && !c.existencia) m.sinExistencia++;
-      } else m.pendiente++;
+  function buildReportData(scope){
+    var noBattery = AppState.auditMode==='no_battery';
+    var sinExistencia = 0;
+    var incidents = scope.records.filter(function(r){ return getStatus(r.id)==='hallazgo'; });
+    var rows = incidents.map(function(r, i){
+      var c = AppState.checks[r.id] || {};
+      if(!c.existencia) sinExistencia++;
+      return [ i+1, r.modelo, r.serie, r.anio, r.dias, r.semaforo,
+        c.existencia ? 'OK' : 'FALTA',
+        c.color ? 'OK' : 'FALTA',
+        noBattery ? 'N/E' : (c.bateria ? 'OK' : 'FALTA'),
+        c.obs || '' ];
     });
-    var agencyRows = Object.keys(agencyMap).sort().map(function(name){
-      var m = agencyMap[name];
-      var avance = m.total ? Math.round((m.conforme+m.hallazgo)/m.total*100) : 0;
-      var porcentajeHallazgos = m.total ? (m.hallazgo/m.total*100).toFixed(1)+'%' : '0.0%';
-      return [name, m.total, m.conforme, m.hallazgo, porcentajeHallazgos, m.pendiente, m.sinExistencia, avance+'%'];
+    var extra = activeExtraFilters();
+    return {
+      agency: scope.agencies[0],
+      stats: computeStats(scope.records),
+      sinExistencia: sinExistencia,
+      rows: rows,
+      noBattery: noBattery,
+      modeLabel: noBattery ? 'Auditoría sin baterías' : 'Auditoría completa',
+      dateLabel: fmtDateLabel(AppState.meta.dateKey||todayKey()),
+      generatedLabel: new Date().toLocaleString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+      metaLine: 'Archivo base: '+(AppState.meta.fileName||'—')+'   ·   '+
+        (extra.length ? 'Filtros adicionales: '+extra.join(', ') : 'Alcance: todas las unidades de la agencia'),
+      comments: (AppState.finalComments||'').trim(),
+      photos: AppState.photos || []
+    };
+  }
+
+  function buildReportPdf(data, step, withPhotos, allowOverflow){
+    var C = PDF_COLORS;
+    var doc = new window.jspdf.jsPDF({ unit:'pt', format:'letter' });
+    var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    var M = 36, CW = W - M*2;
+
+    // header band
+    doc.setFillColor.apply(doc, C.navy); doc.rect(0, 0, W, 70, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(159,176,217);
+    doc.text('VENTO · REGIÓN 6 / MORELOS  ·  AUDITORÍA SEMÁFORO PEPS', M, 21);
+    doc.setFontSize(16); doc.setTextColor(255);
+    doc.text('Reporte de incidencias', M, 41);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
+    doc.text(doc.splitTextToSize(data.agency, CW*0.62)[0], M, 57);
+    doc.setFontSize(8.5); doc.setTextColor(214,222,240);
+    doc.text('Auditoría del '+data.dateLabel, W-M, 23, {align:'right'});
+    doc.text(data.modeLabel, W-M, 38, {align:'right'});
+    doc.text('Generado '+data.generatedLabel, W-M, 53, {align:'right'});
+
+    // meta line
+    doc.setFontSize(7.5); doc.setTextColor.apply(doc, C.muted);
+    doc.text(doc.splitTextToSize(data.metaLine, CW)[0], M, 85);
+
+    // KPI strip
+    var s = data.stats;
+    var pct = s.total ? (s.hallazgo/s.total*100).toFixed(1) : '0.0';
+    var kpis = [
+      {v:s.total, l:'Unidades en alcance', c:C.ink},
+      {v:s.conforme, l:'Conformes', c:C.green},
+      {v:s.hallazgo, l:'Incidencias · '+pct+'%', c:s.hallazgo ? C.red : C.ink},
+      {v:data.sinExistencia, l:'Sin existencia', c:data.sinExistencia ? C.red : C.ink},
+      {v:s.pendiente, l:'Pendientes', c:C.muted},
+      {v:s.avance+'%', l:'Avance de revisión', c:C.accent}
+    ];
+    var kGap = 6, kW = (CW - kGap*(kpis.length-1)) / kpis.length, kY = 94, kH = 42;
+    kpis.forEach(function(k, i){
+      var x = M + i*(kW+kGap);
+      doc.setDrawColor.apply(doc, C.border); doc.setFillColor(255,255,255);
+      doc.roundedRect(x, kY, kW, kH, 4, 4, 'FD');
+      doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor.apply(doc, k.c);
+      doc.text(String(k.v), x+8, kY+20);
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor.apply(doc, C.muted);
+      doc.text(k.l, x+8, kY+33);
     });
 
-    doc.autoTable({
-      startY: 120 + resumenLineas.length*11,
-      margin: {left:margin, right:margin},
-      head: [['Agencia','Total','Conformes','Hallazgos','% hallazgos','Pendientes','Sin existencia','Avance']],
-      body: agencyRows,
-      styles: {fontSize:8.5, cellPadding:4},
-      headStyles: {fillColor:[22,29,46], textColor:255, fontStyle:'bold'},
-      alternateRowStyles: {fillColor:[246,247,249]},
-      columnStyles: {0:{cellWidth:160}}
-    });
+    // bottom block, laid out upward from the signatures
+    var footerY = H - 16;
+    var sigY = H - 58;
+    var cursor = sigY - 34;
+    var photoPlan = null, commentPlan = null;
+    if(withPhotos && data.photos.length){
+      var thumbH = 74, x = 0, items = [];
+      for(var i=0; i<data.photos.length; i++){
+        var w;
+        try{ var p = doc.getImageProperties(data.photos[i].dataUrl); w = Math.min(thumbH*p.width/p.height, 132); }
+        catch(err){ continue; }
+        if(x + w > CW) break;
+        items.push({photo:data.photos[i], x:x, w:w});
+        x += w + 6;
+      }
+      if(items.length){
+        photoPlan = { top: cursor - thumbH - 14, h: thumbH, items: items };
+        cursor = photoPlan.top - 10;
+      }
+    }
+    var photoNoteY = null;
+    if(data.photos.length && !photoPlan){
+      photoNoteY = cursor;
+      cursor -= 16;
+    }
+    if(data.comments){
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+      var lines = doc.splitTextToSize(data.comments, CW-16);
+      if(lines.length > 6){ lines = lines.slice(0,6); lines[5] = lines[5].replace(/\s*\S*$/, '') + ' …'; }
+      var boxH = 20 + lines.length*9.5;
+      commentPlan = { top: cursor - boxH, h: boxH, lines: lines };
+      cursor = commentPlan.top - 10;
+    }
+    var tableLimit = cursor;
 
-    // findings detail
-    var hallazgoRecords = AppState.records.filter(function(r){ return getStatus(r.id)==='hallazgo'; });
-    var afterAgencyY = doc.lastAutoTable.finalY + 22;
-    doc.setFont('helvetica','bold'); doc.setFontSize(11);
-    doc.text('Detalle de unidades con hallazgos ('+hallazgoRecords.length+')', margin, afterAgencyY);
+    // incidents section
+    var secY = kY + kH + 20;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
+    doc.text('Detalle de incidencias ('+data.rows.length+')', M, secY);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
+    doc.text('FALTA = no cumple'+(data.noBattery ? '  ·  N/E = batería no evaluada' : '')+
+      (s.pendiente ? '  ·  '+s.pendiente+' unidades pendientes no se listan' : ''), W-M, secY, {align:'right'});
 
-    if(hallazgoRecords.length){
-      var findingRows = hallazgoRecords.map(function(r){
-        var c = AppState.checks[r.id] || {};
-        return [
-          r.ubicacion, r.modelo, r.serie, r.semaforo,
-          c.existencia ? 'OK' : 'FALTA',
-          c.color ? 'OK' : 'FALTA',
-          AppState.auditMode==='no_battery' ? 'NO EVALUADA' : (c.bateria ? 'OK' : 'FALTA'),
-          c.obs || ''
-        ];
-      });
+    if(data.rows.length){
       doc.autoTable({
-        startY: afterAgencyY + 10,
-        margin: {left:margin, right:margin},
-        head: [['Agencia','Modelo','Serie','Semáforo','Existencia','Color','Batería','Observaciones']],
-        body: findingRows,
-        styles: {fontSize:7.8, cellPadding:3.5},
-        headStyles: {fillColor:[182,35,28], textColor:255, fontStyle:'bold'},
-        alternateRowStyles: {fillColor:[251,236,235]},
-        columnStyles: {0:{cellWidth:110}, 2:{cellWidth:95}, 7:{cellWidth:110}},
-        didParseCell: function(data){
-          if(data.section==='body' && [4,5,6].indexOf(data.column.index)>-1 && data.cell.raw==='FALTA'){
-            data.cell.styles.textColor = [182,35,28];
-            data.cell.styles.fontStyle = 'bold';
+        startY: secY + 6,
+        margin: {left:M, right:M, top:M, bottom: H - tableLimit},
+        head: [['#','Modelo','Serie','Año','Días','Semáforo','Existencia','Color','Batería','Observaciones']],
+        body: data.rows,
+        theme: 'plain',
+        styles: {fontSize:step.font, cellPadding:step.pad, textColor:C.ink, lineColor:C.border, lineWidth:{bottom:0.5}, overflow:'linebreak', valign:'middle'},
+        headStyles: {fillColor:C.navy, textColor:255, fontStyle:'bold', fontSize:step.font-0.4},
+        alternateRowStyles: {fillColor:C.zebra},
+        columnStyles: {
+          0:{cellWidth:18, halign:'center', textColor:C.muted},
+          2:{font:'courier', cellWidth:94},
+          3:{cellWidth:28, halign:'center'}, 4:{cellWidth:28, halign:'center'},
+          5:{cellWidth:46, fontStyle:'bold'},
+          6:{cellWidth:46, halign:'center'}, 7:{cellWidth:36, halign:'center'}, 8:{cellWidth:40, halign:'center'},
+          9:{cellWidth:110}
+        },
+        didParseCell: function(cell){
+          if(cell.section!=='body') return;
+          if(cell.column.index===5 && SEMAFORO_PDF[cell.cell.raw]) cell.cell.styles.textColor = SEMAFORO_PDF[cell.cell.raw];
+          if([6,7,8].indexOf(cell.column.index)>-1){
+            if(cell.cell.raw==='FALTA'){ cell.cell.styles.textColor = C.red; cell.cell.styles.fontStyle = 'bold'; }
+            else cell.cell.styles.textColor = C.muted;
           }
         }
       });
     } else {
-      doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      doc.text('Sin hallazgos registrados en la auditoría cargada.', margin, afterAgencyY + 16);
+      doc.setFillColor.apply(doc, C.greenBg); doc.roundedRect(M, secY+8, CW, 30, 4, 4, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor.apply(doc, C.green);
+      doc.text(s.pendiente ? 'Sin incidencias en las unidades revisadas.' : 'Sin incidencias: todas las unidades están conformes.', M+12, secY+27);
     }
+    if(doc.internal.getNumberOfPages() > 1 && !allowOverflow) return { doc:doc, fits:false };
 
     // final comments
-    if(AppState.finalComments && AppState.finalComments.trim()){
-      doc.addPage();
-      doc.setFont('helvetica','bold'); doc.setFontSize(12);
-      doc.text('Comentarios finales de la auditoría', margin, 50);
-      doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      var wrappedComments = doc.splitTextToSize(AppState.finalComments, pageWidth - margin*2);
-      doc.text(wrappedComments, margin, 70);
+    if(commentPlan){
+      doc.setDrawColor.apply(doc, C.border); doc.setFillColor.apply(doc, C.zebra);
+      doc.roundedRect(M, commentPlan.top, CW, commentPlan.h, 4, 4, 'FD');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc, C.ink);
+      doc.text('Comentarios finales', M+8, commentPlan.top+12);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+      doc.text(commentPlan.lines, M+8, commentPlan.top+23, {lineHeightFactor:1.22});
     }
 
-    // photo evidence
-    if(AppState.photos && AppState.photos.length){
-      var pageH = doc.internal.pageSize.getHeight();
-      AppState.photos.forEach(function(photo, i){
-        doc.addPage();
-        doc.setFont('helvetica','bold'); doc.setFontSize(11);
-        doc.text('Evidencia fotográfica ('+(i+1)+' de '+AppState.photos.length+')', margin, 50);
-        var maxImgW = pageWidth - margin*2;
-        var maxImgH = pageH - 150;
-        try{
-          var props = doc.getImageProperties(photo.dataUrl);
-          var ratio = props.width / props.height;
-          var w = maxImgW, h = w / ratio;
-          if(h > maxImgH){ h = maxImgH; w = h * ratio; }
-          doc.addImage(photo.dataUrl, 'JPEG', margin, 66, w, h);
-          if(photo.caption){
-            doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(90);
-            doc.text(doc.splitTextToSize(photo.caption, maxImgW), margin, 66 + h + 16);
-            doc.setTextColor(20);
-          }
-        }catch(err){ console.error('addImage error', err); }
+    // photo evidence strip
+    if(photoPlan){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc, C.ink);
+      doc.text('Evidencia fotográfica ('+photoPlan.items.length+' de '+data.photos.length+')', M, photoPlan.top+8);
+      photoPlan.items.forEach(function(it){
+        try{ doc.addImage(it.photo.dataUrl, 'JPEG', M+it.x, photoPlan.top+14, it.w, photoPlan.h); }
+        catch(err){ console.error('addImage error', err); }
       });
+    } else if(photoNoteY !== null){
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
+      doc.text(data.photos.length+' foto(s) de evidencia guardadas en el sistema (no caben en la hoja).', M, photoNoteY);
     }
 
-    // closure and signatures (always the final page)
-    doc.addPage();
-    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(20);
-    doc.text('Cierre y firmas de auditoría', margin, 55);
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    doc.text('Modalidad: '+auditModeLabel, margin, 76);
-    doc.text('Inventario revisado con hallazgos: '+globalStats.hallazgo+' de '+globalStats.total+' unidades ('+hallazgoPct+'%)', margin, 92);
-    var signatureY = 230;
-    var lineWidth = 205;
-    var gap = 55;
-    var rightX = margin + lineWidth + gap;
-    doc.setDrawColor(80);
-    doc.line(margin, signatureY, margin+lineWidth, signatureY);
-    doc.line(rightX, signatureY, rightX+lineWidth, signatureY);
-    doc.setFont('helvetica','bold'); doc.setFontSize(10);
-    doc.text('Nombre y firma del auditor', margin+lineWidth/2, signatureY+16, {align:'center'});
-    doc.text('Nombre y firma del responsable de la agencia', rightX+lineWidth/2, signatureY+16, {align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(100);
-    doc.text('Firma de conformidad y conocimiento de los hallazgos registrados.', margin, signatureY+48);
+    // signatures
+    var lineW = (CW - 60) / 2, rightX = M + lineW + 60;
+    doc.setDrawColor(80); doc.setLineWidth(0.6);
+    doc.line(M, sigY, M+lineW, sigY);
+    doc.line(rightX, sigY, rightX+lineW, sigY);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc, C.ink);
+    doc.text('Nombre y firma del auditor', M+lineW/2, sigY+11, {align:'center'});
+    doc.text('Nombre y firma del responsable de la agencia', rightX+lineW/2, sigY+11, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor.apply(doc, C.muted);
+    doc.text('Firma de conformidad y conocimiento de las incidencias registradas.', W/2, sigY+23, {align:'center'});
 
-    // footer page numbers
+    // footer
     var pageCount = doc.internal.getNumberOfPages();
-    for(var p=1; p<=pageCount; p++){
-      doc.setPage(p);
-      doc.setFontSize(8); doc.setTextColor(140);
-      doc.text('VENTO Región 6 · Auditoría Semáforo PEPS · Página '+p+' de '+pageCount, margin, doc.internal.pageSize.getHeight()-20);
+    for(var pg=1; pg<=pageCount; pg++){
+      doc.setPage(pg);
+      doc.setDrawColor.apply(doc, C.border); doc.setLineWidth(0.5); doc.line(M, footerY-9, W-M, footerY-9);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(140);
+      doc.text('VENTO Región 6 · Auditoría Semáforo PEPS · '+data.agency, M, footerY);
+      doc.text('Hoja '+pg+' de '+pageCount, W-M, footerY, {align:'right'});
     }
+    return { doc:doc, fits:true };
+  }
 
-    doc.save('auditoria_semaforo_peps_'+(AppState.meta.dateKey||todayKey())+'.pdf');
+  function generateReport(){
+    var scope = reportScope();
+    if(!scope.ready) return null;
+    var data = buildReportData(scope);
+    var tries = data.photos.length ? [true,false] : [false];
+    for(var i=0; i<PDF_FIT_STEPS.length; i++){
+      for(var j=0; j<tries.length; j++){
+        var r = buildReportPdf(data, PDF_FIT_STEPS[i], tries[j]);
+        if(r.fits) return { doc:r.doc, data:data };
+      }
+    }
+    alert('Hay demasiadas incidencias ('+data.rows.length+') para una sola hoja; el reporte continuará en una segunda hoja.');
+    return { doc: buildReportPdf(data, PDF_FIT_STEPS[PDF_FIT_STEPS.length-1], false, true).doc, data:data };
+  }
+
+  document.getElementById('pdfBtn').addEventListener('click', function(){
+    var out = generateReport();
+    if(!out) return;
+    var slug = out.data.agency.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase();
+    out.doc.save('incidencias_peps_'+slug+'_'+(AppState.meta.dateKey||todayKey())+'.pdf');
   });
 
   // ---------- init ----------
