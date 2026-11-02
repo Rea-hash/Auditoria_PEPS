@@ -217,7 +217,11 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 }
 .ok-btn:hover{background:var(--green-bg);}
 
-.pagination{display:flex; align-items:center; gap:10px; padding:12px 14px; font-size:12.5px; color:var(--muted);}
+.pagination{display:flex; align-items:center; gap:10px; padding:10px 4px 0; font-size:12.5px; color:var(--muted);}
+/* The list scrolls inside its panel (mouse wheel, scrollbar or finger) with the header pinned. */
+.table-wrap{max-height:calc(100dvh - 120px); scrollbar-width:thin;}
+.load-more{padding:14px; text-align:center; font-size:12.5px; color:var(--muted);}
+.load-more[hidden]{display:none;}
 .pagination button{
   border:1px solid var(--border); background:#fff; border-radius:var(--r-control); padding:6px 11px;
   cursor:pointer; font-weight:700; font-size:12.5px;
@@ -339,6 +343,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   .filters .field{flex:1 1 100%;}
   .field select, .field input[type=text], .field.search input, .audit-mode-field select{min-width:0; width:100%; font-size:16px;}
   .filters .meta-tag{margin-left:0;}
+  /* On phones the cards scroll with the page itself; a nested scroll area is hard to use with one thumb. */
+  .table-wrap{max-height:none; overflow:visible;}
   .table-wrap.as-cards{background:none; border:none; box-shadow:none;}
   .table-wrap.as-cards tbody{padding:0;}
   .obs-input{font-size:16px;}
@@ -445,8 +451,9 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
           </thead>
           <tbody id="tbody"></tbody>
         </table>
-        <div class="pagination" id="pagination"></div>
+        <div class="load-more" id="loadMore" hidden>Cargando más unidades…</div>
       </div>
+      <div class="pagination" id="pagination" aria-live="polite"></div>
       <div class="footnote" id="auditFootnote">Un tono unido: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad conforme la revisas físicamente. El reporte PDF incluye solo la agencia y los filtros activos en pantalla, en una sola hoja.</div>
 
       <div class="closure">
@@ -519,7 +526,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     checks: {},
     filters: { ubicacion:'', modelo:'', anio:'', semaforo:'', search:'' },
     page: 1,
-    pageSize: 25,
+    view: [],
+    shown: 0,
     meta: { fileName:'', uploadedAt:'', dateKey:'' },
     auditMode: 'complete',
     finalComments: '',
@@ -784,30 +792,50 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   function renderTable(){
     var filtered = applyFilters();
     renderKPIs(filtered);
-    var totalPages = Math.max(1, Math.ceil(filtered.length / AppState.pageSize));
-    if(AppState.page > totalPages) AppState.page = totalPages;
-    var start = (AppState.page-1)*AppState.pageSize;
-    var pageRows = filtered.slice(start, start+AppState.pageSize);
-
     var tbody = document.getElementById('tbody');
-    if(!pageRows.length){
+    AppState.view = filtered;
+    AppState.shown = 0;
+    document.querySelector('.table-wrap').scrollTop = 0;
+    if(!filtered.length){
       tbody.innerHTML = '<tr><td colspan="12" class="empty-row" style="text-align:center; color:var(--muted); padding:30px;">Sin unidades para estos filtros.</td></tr>';
+      updateListStatus();
     } else {
-      var html = pageRows.map(rowHtml).join('');
-      tbody.innerHTML = html;
+      tbody.innerHTML = '';
+      appendRows();
     }
-
-    var pag = document.getElementById('pagination');
-    pag.innerHTML =
-      '<button id="prevPage" '+(AppState.page<=1?'disabled':'')+'>‹ Anterior</button>' +
-      '<span>Página '+AppState.page+' de '+totalPages+' · '+filtered.length+' unidades</span>' +
-      '<button id="nextPage" '+(AppState.page>=totalPages?'disabled':'')+'>Siguiente ›</button>';
-    document.getElementById('prevPage').addEventListener('click', function(){ AppState.page--; renderTable(); });
-    document.getElementById('nextPage').addEventListener('click', function(){ AppState.page++; renderTable(); });
     document.querySelector('.table-wrap table').classList.toggle('one-agency', !!AppState.filters.ubicacion);
     fitTable();
     updateReportScopeUI();
   }
+
+  // Continuous scroll instead of pages: rows are appended in chunks as the end of the list
+  // comes into view, so large files (4,000+ units) stay responsive.
+  var ROW_CHUNK = 60;
+  function appendRows(){
+    var next = AppState.view.slice(AppState.shown, AppState.shown + ROW_CHUNK);
+    if(next.length) document.getElementById('tbody').insertAdjacentHTML('beforeend', next.map(rowHtml).join(''));
+    AppState.shown += next.length;
+    updateListStatus();
+  }
+  function updateListStatus(){
+    var total = AppState.view.length, more = AppState.shown < total;
+    document.getElementById('loadMore').hidden = !more;
+    document.getElementById('pagination').textContent = !total ? '' :
+      (more ? 'Mostrando '+AppState.shown+' de '+total+' unidades. Desplázate para ver más.' : total+' unidades');
+    if(more) maybeLoadMore();
+  }
+  var loadMoreEl = document.getElementById('loadMore');
+  // Loads the next chunk once the end of the list is within 300px of the visible edge, whether the
+  // list scrolls inside its panel (desktop/tablet) or with the page (phone).
+  function maybeLoadMore(){
+    if(AppState.shown >= AppState.view.length) return;
+    var r = loadMoreEl.getBoundingClientRect();
+    if(!r.height) return;
+    var wrapBottom = document.querySelector('.table-wrap').getBoundingClientRect().bottom;
+    if(r.top < Math.min(window.innerHeight, wrapBottom) + 300) appendRows();
+  }
+  document.querySelector('.table-wrap').addEventListener('scroll', maybeLoadMore, {passive:true});
+  window.addEventListener('scroll', maybeLoadMore, {passive:true});
 
   // Switch to the card view whenever the full table would overflow the space it actually has
   // (sidebar, tablet, phone, zoom), instead of relying on fixed breakpoints.
