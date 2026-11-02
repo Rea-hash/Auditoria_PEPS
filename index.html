@@ -157,6 +157,13 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
   font-size:13.5px; font-family:inherit; min-width:170px; background:#fbfcfd;
 }
 .field.search input{min-width:200px;}
+.toggle-field{
+  display:inline-flex; align-items:center; gap:8px; min-height:42px; padding:0 4px;
+  font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer;
+}
+.toggle-field[hidden]{display:none;}
+.toggle-field input{width:20px; height:20px;}
+.toggle-field .muted{color:var(--muted); font-weight:500;}
 .clear-link{
   border:none; background:none; color:var(--accent); font-weight:700; font-size:13px;
   cursor:pointer; padding:8px 4px;
@@ -408,6 +415,10 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
           <label for="fSearch">Buscar serie / modelo</label>
           <input type="text" id="fSearch" placeholder="Ej. 3MUAZ... o Alpina 300">
         </div>
+        <label class="toggle-field" id="testToggle" hidden>
+          <input type="checkbox" id="fHideTest" checked>
+          <span>Ocultar motos de prueba <span class="muted" id="testCount"></span></span>
+        </label>
         <button class="clear-link" id="clearFilters">Limpiar filtros</button>
         <span class="meta-tag" id="fileMeta"></span>
       </div>
@@ -512,9 +523,17 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     meta: { fileName:'', uploadedAt:'', dateKey:'' },
     auditMode: 'complete',
     finalComments: '',
-    photos: []
+    photos: [],
+    hideTest: true
   };
   var saveTimer = null;
+  // Viewer preference, not audit data: remembered per browser, on by default.
+  try{ AppState.hideTest = window.localStorage.getItem('vento_peps_pref_hideTest') !== '0'; }catch(e){}
+
+  // Test units are loaded with serials like "Prueba Valle De Chalco Tezozomoc 3"; they are not audited.
+  function isTestUnit(r){
+    return /prueba/i.test(r.serie||'') || /prueba/i.test(r.modelo||'') || /prueba/i.test(r.articulo||'');
+  }
 
   // ---------- helpers ----------
   // Accent- and case-insensitive so "AÑO"/"Año"/"Ano" or "Ubicación"/"UBICACION" all match.
@@ -730,6 +749,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   function applyFilters(){
     var f = AppState.filters;
     return AppState.records.filter(function(r){
+      if(AppState.hideTest && isTestUnit(r)) return false;
       if(f.ubicacion && r.ubicacion !== f.ubicacion) return false;
       if(f.modelo && r.modelo !== f.modelo) return false;
       if(f.anio && String(r.anio) !== String(f.anio)) return false;
@@ -922,6 +942,19 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     AppState.page = 1;
     renderTable();
   });
+  document.getElementById('fHideTest').addEventListener('change', function(e){
+    AppState.hideTest = e.target.checked;
+    try{ window.localStorage.setItem('vento_peps_pref_hideTest', AppState.hideTest ? '1' : '0'); }catch(err){}
+    AppState.page = 1;
+    renderTable();
+  });
+  // The toggle only shows up when the loaded file actually contains test units.
+  function updateTestToggle(){
+    var n = AppState.records.filter(isTestUnit).length;
+    document.getElementById('testToggle').hidden = n === 0;
+    document.getElementById('fHideTest').checked = AppState.hideTest;
+    document.getElementById('testCount').textContent = '('+n+')';
+  }
   document.getElementById('clearFilters').addEventListener('click', function(){
     AppState.filters = { ubicacion:'', modelo:'', anio:'', semaforo:'', search:'' };
     document.getElementById('fUbicacion').value = '';
@@ -978,6 +1011,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     document.getElementById('fSearch').value = '';
     updateAuditModeUI();
     populateFilterOptions();
+    updateTestToggle();
     renderTable();
     document.getElementById('finalComments').value = AppState.finalComments || '';
     renderPhotos();
