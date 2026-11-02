@@ -1147,16 +1147,16 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     if(scope.ready){
       var stats = computeStats(scope.records);
       var extra = activeExtraFilters();
-      btn.title = 'Generar reporte de incidencias de '+scope.agencies[0];
+      btn.title = 'Generar reporte de auditoría de '+scope.agencies[0];
       el.className = 'report-scope ready';
       el.innerHTML = '<b>Reporte PDF de '+esc(scope.agencies[0])+':</b> '+stats.total+' unidades, '+
-        stats.hallazgo+' incidencias'+(stats.pendiente ? ' y '+stats.pendiente+' pendientes' : '')+'.'+
+        stats.conforme+' conformes, '+stats.hallazgo+' no conformes'+(stats.pendiente ? ' y '+stats.pendiente+' pendientes' : '')+'.'+
         (extra.length ? ' <span class="muted">Filtros: '+esc(extra.join(', '))+'.</span>' : '');
     } else {
       btn.title = 'Selecciona una agencia para generar el reporte';
       el.className = 'report-scope';
       el.innerHTML = scope.agencies.length
-        ? 'Selecciona una agencia en <b>Ubicación</b> para generar el reporte PDF de incidencias ('+scope.agencies.length+' agencias en vista).'
+        ? 'Selecciona una agencia en <b>Ubicación</b> para generar el reporte PDF de auditoría ('+scope.agencies.length+' agencias en vista).'
         : 'No hay unidades en vista con los filtros actuales.';
     }
   }
@@ -1164,7 +1164,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   // ---------- PDF export (filtered agency, single letter sheet) ----------
   // Each step trades readability for room; the first one that fits on one sheet wins.
   var PDF_FIT_STEPS = [
-    {font:8, pad:3.2}, {font:7.2, pad:2.5}, {font:6.5, pad:1.9}, {font:5.8, pad:1.4}
+    {font:8, pad:3.2, groups:3}, {font:7.2, pad:2.5, groups:3}, {font:6.5, pad:1.9, groups:4}, {font:5.8, pad:1.4, groups:4}
   ];
   var PDF_COLORS = {
     navy:[22,29,46], ink:[20,23,28], muted:[98,106,120], border:[225,229,235],
@@ -1186,12 +1186,16 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
         noBattery ? 'N/E' : (c.bateria ? 'OK' : 'FALTA'),
         c.obs || '' ];
     });
+    // Conforming units are listed compactly (serial + model) so a 100% audit still documents what was checked.
+    var conformes = scope.records.filter(function(r){ return getStatus(r.id)==='conforme'; })
+      .map(function(r){ return { serie:r.serie, modelo:r.modelo }; });
     var extra = activeExtraFilters();
     return {
       agency: scope.agencies[0],
       stats: computeStats(scope.records),
       sinExistencia: sinExistencia,
       rows: rows,
+      conformes: conformes,
       noBattery: noBattery,
       modeLabel: noBattery ? 'Auditoría sin baterías' : 'Auditoría completa',
       dateLabel: fmtDateLabel(AppState.meta.dateKey||todayKey()),
@@ -1214,7 +1218,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(159,176,217);
     doc.text('VENTO REGIÓN 6 / MORELOS  ·  AUDITORÍA SEMÁFORO PEPS', M, 21);
     doc.setFontSize(16); doc.setTextColor(255);
-    doc.text('Reporte de incidencias', M, 41);
+    doc.text('Reporte de auditoría', M, 41);
     doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
     doc.text(doc.splitTextToSize(data.agency, CW*0.62)[0], M, 57);
     doc.setFontSize(8.5); doc.setTextColor(214,222,240);
@@ -1232,7 +1236,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     var kpis = [
       {v:s.total, l:'Unidades en alcance', c:C.ink},
       {v:s.conforme, l:'Conformes', c:C.green},
-      {v:s.hallazgo, l:'Incidencias ('+pct+'%)', c:s.hallazgo ? C.red : C.ink},
+      {v:s.hallazgo, l:'No conformes ('+pct+'%)', c:s.hallazgo ? C.red : C.ink},
       {v:data.sinExistencia, l:'Sin existencia', c:data.sinExistencia ? C.red : C.ink},
       {v:s.pendiente, l:'Pendientes', c:C.muted},
       {v:s.avance+'%', l:'Avance de revisión', c:C.accent}
@@ -1283,10 +1287,10 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     }
     var tableLimit = cursor;
 
-    // incidents section
+    // non-conformities section
     var secY = kY + kH + 20;
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
-    doc.text('Detalle de incidencias ('+data.rows.length+')', M, secY);
+    doc.text('No conformidades ('+data.rows.length+')', M, secY);
     doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
     doc.text('FALTA = no cumple'+(data.noBattery ? ';  N/E = batería no evaluada' : '')+
       (s.pendiente ? ';  '+s.pendiente+' unidades pendientes no se listan' : ''), W-M, secY, {align:'right'});
@@ -1319,9 +1323,44 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
         }
       });
     } else {
-      doc.setFillColor.apply(doc, C.greenBg); doc.roundedRect(M, secY+8, CW, 30, 4, 4, 'F');
+      doc.setFillColor.apply(doc, C.greenBg); doc.roundedRect(M, secY+8, CW, 24, 4, 4, 'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor.apply(doc, C.green);
-      doc.text(s.pendiente ? 'Sin incidencias en las unidades revisadas.' : 'Sin incidencias: todas las unidades están conformes.', M+12, secY+27);
+      doc.text(s.pendiente ? 'Sin no conformidades en las unidades revisadas.' : 'Sin no conformidades: todas las unidades están conformes.', M+12, secY+24);
+    }
+
+    // conformities section: compact, filled top-to-bottom then left-to-right across N column groups
+    if(data.conformes.length && (doc.internal.getNumberOfPages() === 1 || allowOverflow)){
+      var confY = (data.rows.length ? doc.lastAutoTable.finalY : secY + 32) + 18;
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
+      doc.text('Conformidades ('+data.conformes.length+')', M, confY);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
+      doc.text('Existencia, color'+(data.noBattery ? '' : ' y batería')+' verificados', W-M, confY, {align:'right'});
+      var g = step.groups, perCol = Math.ceil(data.conformes.length / g), head = [], body = [];
+      for(var gi=0; gi<g; gi++) head.push('#','Serie','Modelo');
+      for(var ri=0; ri<perCol; ri++){
+        var line = [];
+        for(var gj=0; gj<g; gj++){
+          var k = gj*perCol + ri, it = data.conformes[k];
+          line.push(it ? k+1 : '', it ? it.serie : '', it ? it.modelo : '');
+        }
+        body.push(line);
+      }
+      var groupW = CW / g, confCols = {};
+      for(var gk=0; gk<g; gk++){
+        confCols[gk*3] = {cellWidth:16, halign:'center', textColor:C.muted};
+        confCols[gk*3+1] = {cellWidth:Math.min(92, groupW*0.52), font:'courier'};
+        confCols[gk*3+2] = {cellWidth:groupW - 16 - Math.min(92, groupW*0.52)};
+      }
+      doc.autoTable({
+        startY: confY + 6,
+        margin: {left:M, right:M, top:M, bottom: H - tableLimit},
+        head: [head],
+        body: body,
+        theme: 'plain',
+        styles: {fontSize:step.font-0.4, cellPadding:Math.max(1, step.pad-0.8), textColor:C.ink, lineColor:C.border, lineWidth:{bottom:0.4}, overflow:'ellipsize', valign:'middle'},
+        headStyles: {fillColor:C.greenBg, textColor:C.green, fontStyle:'bold', fontSize:step.font-0.8},
+        columnStyles: confCols
+      });
     }
     if(doc.internal.getNumberOfPages() > 1 && !allowOverflow) return { doc:doc, fits:false };
 
@@ -1357,7 +1396,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     doc.text('Nombre y firma del auditor', M+lineW/2, sigY+11, {align:'center'});
     doc.text('Nombre y firma del responsable de la agencia', rightX+lineW/2, sigY+11, {align:'center'});
     doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor.apply(doc, C.muted);
-    doc.text('Firma de conformidad y conocimiento de las incidencias registradas.', W/2, sigY+23, {align:'center'});
+    doc.text('Firma de conformidad y conocimiento de los resultados registrados.', W/2, sigY+23, {align:'center'});
 
     // footer
     var pageCount = doc.internal.getNumberOfPages();
@@ -1382,7 +1421,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
         if(r.fits) return { doc:r.doc, data:data };
       }
     }
-    alert('Hay demasiadas incidencias ('+data.rows.length+') para una sola hoja; el reporte continuará en una segunda hoja.');
+    alert('Hay demasiadas unidades ('+data.rows.length+' no conformes y '+data.conformes.length+' conformes) para una sola hoja; el reporte continuará en una segunda hoja.');
     return { doc: buildReportPdf(data, PDF_FIT_STEPS[PDF_FIT_STEPS.length-1], false, true).doc, data:data };
   }
 
@@ -1390,7 +1429,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     var out = generateReport();
     if(!out) return;
     var slug = out.data.agency.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase();
-    out.doc.save('incidencias_peps_'+slug+'_'+(AppState.meta.dateKey||todayKey())+'.pdf');
+    out.doc.save('auditoria_peps_'+slug+'_'+(AppState.meta.dateKey||todayKey())+'.pdf');
   });
 
   // ---------- init ----------
