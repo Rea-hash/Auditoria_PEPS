@@ -134,7 +134,7 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
   padding:12px 14px; box-shadow:var(--shadow);
 }
 .kpi .n{font-family:'Barlow Condensed'; font-weight:800; font-size:28px; line-height:1;}
-.kpi .l{font-size:11.5px; color:var(--muted); margin-top:4px; letter-spacing:.02em;}
+.kpi .l{font-size:12.5px; color:var(--muted); margin-top:4px; letter-spacing:.02em;}
 .kpi.conforme .n{color:var(--green);}
 .kpi.hallazgo .n{color:var(--red);}
 .kpi.pendiente .n{color:var(--muted);}
@@ -148,7 +148,7 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
   padding:14px; margin-bottom:16px; box-shadow:var(--shadow);
 }
 .field{display:flex; flex-direction:column; gap:5px;}
-.field label{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+.field label{font-size:12px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
 .field select, .field input[type=text]{
   border:1px solid var(--border); border-radius:8px; padding:8px 10px;
   font-size:13.5px; font-family:inherit; min-width:170px; background:#fbfcfd;
@@ -173,7 +173,7 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
 table{border-collapse:collapse; width:100%; min-width:1080px; font-size:13px;}
 thead th{
   position:sticky; top:0; background:#f7f8fa; border-bottom:1px solid var(--border);
-  text-align:left; padding:10px 10px; font-size:10.5px; color:var(--muted);
+  text-align:left; padding:10px 10px; font-size:11.5px; color:var(--muted);
   text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;
 }
 tbody td{padding:8px 10px; border-bottom:1px solid #eef0f3; vertical-align:middle;}
@@ -182,26 +182,27 @@ tbody tr.row-hallazgo{background:#fff8f7;}
 tbody tr.row-hallazgo:hover{background:#fdefed;}
 td.ubic{max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 td.serie{font-family:'JetBrains Mono',monospace; font-size:12px; color:#333;}
+td.c-modelo{white-space:nowrap;}
 td center, .cbcell{text-align:center;}
 input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--green);}
 .badge{
-  display:inline-block; padding:3px 9px; border-radius:99px; font-size:11px; font-weight:700;
+  display:inline-block; padding:3px 9px; border-radius:99px; font-size:12px; font-weight:700;
   white-space:nowrap;
 }
 .badge.Verde{background:var(--green-bg); color:var(--green);}
 .badge.Amarillo{background:var(--amber-bg); color:var(--amber);}
 .badge.Rojo{background:var(--red-bg); color:var(--red);}
 .badge.Negro{background:var(--negro-bg); color:var(--negro);}
-.status{font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap;}
+.status{font-size:12px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap;}
 .status.conforme{background:var(--green-bg); color:var(--green);}
 .status.hallazgo{background:var(--red-bg); color:var(--red);}
 .status.pendiente{background:#eef0f3; color:var(--muted);}
 .obs-input{
-  width:130px; border:1px solid var(--border); border-radius:6px; padding:5px 7px; font-size:12px; font-family:inherit;
+  width:140px; border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:13px; font-family:inherit;
 }
 .ok-btn{
   border:1px solid var(--green); color:var(--green); background:#fff;
-  font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; cursor:pointer; white-space:nowrap;
+  font-size:12px; font-weight:700; padding:6px 10px; border-radius:6px; cursor:pointer; white-space:nowrap;
 }
 .ok-btn:hover{background:var(--green-bg);}
 
@@ -212,7 +213,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 }
 .pagination button:disabled{opacity:.4; cursor:not-allowed;}
 
-.footnote{font-size:12px; color:var(--muted); margin-top:12px; line-height:1.6;}
+.footnote{font-size:13px; color:var(--muted); margin-top:12px; line-height:1.6;}
 
 /* ---------- Closure section ---------- */
 .closure{
@@ -227,7 +228,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 }
 .file-btn.small{padding:8px 13px; font-size:12.5px; background:var(--accent-bg); color:var(--accent);}
 .photos-block{margin-top:6px;}
-.photo-hint{font-size:11.5px; color:var(--muted); margin:8px 0 12px;}
+.photo-hint{font-size:12.5px; color:var(--muted); margin:8px 0 12px;}
 .photo-grid{
   display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:14px;
 }
@@ -242,8 +243,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   display:flex; align-items:center; justify-content:center; line-height:1;
 }
 .photo-card .cap{
-  width:100%; border:none; border-top:1px solid var(--border); padding:6px 8px;
-  font-size:11.5px; font-family:inherit; background:transparent;
+  width:100%; border:none; border-top:1px solid var(--border); padding:10px 8px;
+  font-size:13px; font-family:inherit; background:transparent;
 }
 .photo-empty{font-size:12.5px; color:var(--muted); padding:10px 0;}
 .storage-warn{font-size:11.5px; color:var(--red); margin-top:8px; display:none;}
@@ -267,11 +268,69 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 }
 @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
 
+/* ---------- Touch targets ---------- */
+/* The checkbox stays 20px visually; its label wrapper is the 44px hit area. */
+.cb-hit{display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; cursor:pointer; border-radius:8px;}
+.cb-hit:hover{background:rgba(15,122,61,.06);}
+.cb-hit input[type=checkbox]{width:20px; height:20px;}
+.battery-col-disabled .cb-hit{cursor:not-allowed;}
+.battery-col-disabled .cb-hit:hover{background:none;}
+.ok-btn, .obs-input, .pagination button, .clear-link{min-height:40px;}
+.btn, .file-btn{min-height:42px;}
+.field select, .field input[type=text]{min-height:42px;}
+.photo-card .rm{width:32px; height:32px; font-size:17px;}
+.photo-card .rm::before{content:""; position:absolute; inset:-6px;}
+.history-item button{min-height:36px; padding:6px 12px;}
+@media (pointer: coarse){
+  .ok-btn, .obs-input, .pagination button, .clear-link, .btn, .file-btn,
+  .field select, .field input[type=text], .history-item button{min-height:44px;}
+}
+
 @media (max-width: 980px){
   .layout{flex-direction:column;}
   .sidebar{width:100%; flex:none; position:static; padding-bottom:6px;}
   .kpis{grid-template-columns:repeat(2,1fr);}
   main{padding:16px;}
+}
+
+/* ---------- Phone: filters stack, table rows become cards ---------- */
+@media (max-width: 760px){
+  .topbar{position:static; padding:14px 16px;}
+  .topbar-actions{margin-left:0; width:100%;}
+  .topbar-actions .file-btn, .topbar-actions .btn{flex:1 1 100%; justify-content:center;}
+  .save-status{order:3; width:100%;}
+  .filters .field{flex:1 1 100%;}
+  .field select, .field input[type=text], .field.search input, .audit-mode-field select{min-width:0; width:100%; font-size:16px;}
+  .filters .meta-tag{margin-left:0;}
+  .table-wrap{background:none; border:none; box-shadow:none; overflow:visible;}
+  table{min-width:0;}
+  thead{display:none;}
+  tbody{display:flex; flex-direction:column; gap:10px;}
+  tbody tr{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:4px 8px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:12px; box-shadow:var(--shadow);
+  }
+  tbody tr.row-hallazgo{border-color:#f2c2be;}
+  tbody tr:hover{background:var(--surface);}
+  tbody tr.row-hallazgo:hover{background:#fff8f7;}
+  tbody td{display:block; border:none; padding:2px 0; min-width:0;}
+  tbody td[data-label]::before{
+    content:attr(data-label); display:block; font-size:11px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px;
+  }
+  td.ubic{grid-column:1 / -1; max-width:none; white-space:normal; font-size:12px; color:var(--muted);}
+  td.c-modelo{grid-column:1 / 3; grid-row:2; font-weight:700; font-size:15px; white-space:normal;}
+  td.c-status{grid-column:3; grid-row:2; text-align:right; align-self:start;}
+  td.serie{grid-column:1 / -1; font-size:13px;}
+  td.cbcell{text-align:left;}
+  td.cbcell .cb-hit{justify-content:flex-start; min-width:0; width:100%;}
+  td.c-obs{grid-column:1 / -1;}
+  .obs-input{width:100%; font-size:16px;}
+  td.c-ok{grid-column:1 / -1;}
+  .ok-btn{width:100%; min-height:44px; font-size:13px;}
+  td.empty-row{grid-column:1 / -1;}
+  .pagination{justify-content:space-between; padding:12px 0; flex-wrap:wrap;}
 }
 </style>
 </head>
@@ -318,7 +377,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 
       <div class="filters">
         <div class="field audit-mode-field">
-          <label>Modalidad de auditoría</label>
+          <label for="auditMode">Modalidad de auditoría</label>
           <select id="auditMode">
             <option value="complete">Auditoría completa</option>
             <option value="no_battery">Auditoría sin baterías</option>
@@ -329,19 +388,19 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
           <select id="fUbicacion"><option value="">Todas las agencias</option></select>
         </div>
         <div class="field">
-          <label>Modelo de planeación</label>
+          <label for="fModelo">Modelo de planeación</label>
           <select id="fModelo"><option value="">Todos los modelos</option></select>
         </div>
         <div class="field">
-          <label>Año</label>
+          <label for="fAnio">Año</label>
           <select id="fAnio"><option value="">Todos</option></select>
         </div>
         <div class="field">
-          <label>Semáforo</label>
+          <label for="fSemaforo">Semáforo</label>
           <select id="fSemaforo"><option value="">Todos</option></select>
         </div>
         <div class="field search">
-          <label>Buscar serie / modelo</label>
+          <label for="fSearch">Buscar serie / modelo</label>
           <input type="text" id="fSearch" placeholder="Ej. 3MUAZ... o Alpina 300">
         </div>
         <button class="clear-link" id="clearFilters">Limpiar filtros</button>
@@ -377,7 +436,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       <div class="closure">
         <h3>Cierre de auditoría</h3>
         <div class="field">
-          <label>Comentarios finales</label>
+          <label for="finalComments">Comentarios finales</label>
           <textarea id="finalComments" placeholder="Observaciones generales del día, acuerdos con las agencias, seguimientos pendientes..."></textarea>
         </div>
         <div class="photos-block">
@@ -688,7 +747,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 
     var tbody = document.getElementById('tbody');
     if(!pageRows.length){
-      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:30px;">Sin unidades para estos filtros.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="empty-row" style="text-align:center; color:var(--muted); padding:30px;">Sin unidades para estos filtros.</td></tr>';
     } else {
       var html = pageRows.map(rowHtml).join('');
       tbody.innerHTML = html;
@@ -710,17 +769,17 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     var stLabel = st==='conforme' ? 'Conforme' : (st==='hallazgo' ? 'Hallazgo' : 'Pendiente');
     return '<tr data-id="'+esc(r.id)+'" class="'+(st==='hallazgo'?'row-hallazgo':'')+'">'+
       '<td class="ubic" title="'+esc(r.ubicacion)+'">'+esc(r.ubicacion)+'</td>'+
-      '<td>'+esc(r.modelo)+'</td>'+
+      '<td class="c-modelo">'+esc(r.modelo)+'</td>'+
       '<td class="serie">'+esc(r.serie)+'</td>'+
-      '<td>'+esc(r.anio)+'</td>'+
-      '<td>'+esc(r.dias)+'</td>'+
-      '<td><span class="badge '+esc(r.semaforo)+'">'+esc(r.semaforo)+'</span></td>'+
-      '<td class="cbcell"><input type="checkbox" class="chk-existencia" aria-label="Existencia '+esc(r.serie)+'" '+(c.existencia?'checked':'')+'></td>'+
-      '<td class="cbcell"><input type="checkbox" class="chk-color" aria-label="Color '+esc(r.serie)+'" '+(c.color?'checked':'')+'></td>'+
-      '<td class="cbcell battery-cell '+(AppState.auditMode==='no_battery'?'battery-col-disabled':'')+'"><input type="checkbox" class="chk-bateria" aria-label="Batería '+esc(r.serie)+'" '+(c.bateria?'checked':'')+' '+(AppState.auditMode==='no_battery'?'disabled title="No evaluada en esta modalidad"':'')+'></td>'+
-      '<td><input type="text" class="obs-input" placeholder="Nota" aria-label="Observación '+esc(r.serie)+'" value="'+esc(c.obs||'')+'"></td>'+
-      '<td><button class="ok-btn" type="button">✓ Todo OK</button></td>'+
-      '<td><span class="status '+st+'">'+stLabel+'</span></td>'+
+      '<td data-label="Año">'+esc(r.anio)+'</td>'+
+      '<td data-label="Días">'+esc(r.dias)+'</td>'+
+      '<td data-label="Semáforo"><span class="badge '+esc(r.semaforo)+'">'+esc(r.semaforo)+'</span></td>'+
+      '<td class="cbcell" data-label="Existencia"><label class="cb-hit"><input type="checkbox" class="chk-existencia" aria-label="Existencia '+esc(r.serie)+'" '+(c.existencia?'checked':'')+'></label></td>'+
+      '<td class="cbcell" data-label="Color"><label class="cb-hit"><input type="checkbox" class="chk-color" aria-label="Color '+esc(r.serie)+'" '+(c.color?'checked':'')+'></label></td>'+
+      '<td class="cbcell battery-cell '+(AppState.auditMode==='no_battery'?'battery-col-disabled':'')+'" data-label="Batería"><label class="cb-hit"><input type="checkbox" class="chk-bateria" aria-label="Batería '+esc(r.serie)+'" '+(c.bateria?'checked':'')+' '+(AppState.auditMode==='no_battery'?'disabled title="No evaluada en esta modalidad"':'')+'></label></td>'+
+      '<td class="c-obs"><input type="text" class="obs-input" placeholder="Nota" aria-label="Observación '+esc(r.serie)+'" value="'+esc(c.obs||'')+'"></td>'+
+      '<td class="c-ok"><button class="ok-btn" type="button">✓ Todo OK</button></td>'+
+      '<td class="c-status"><span class="status '+st+'">'+stLabel+'</span></td>'+
       '</tr>';
   }
   function esc(v){
