@@ -387,7 +387,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   <main>
     <div id="emptyState" class="empty-state">
       <h2>Sube el archivo de hoy para comenzar</h2>
-      <p>Carga el Excel de existencias (semáforo PEPS) de tus 23 agencias. Podrás filtrar por ubicación, modelo de planeación, año y semáforo, marcar existencia / color / batería por unidad, y cerrar el día con un reporte PDF de incidencias de la agencia auditada, en una sola hoja.</p>
+      <p>Carga el Excel de existencias (semáforo PEPS) de tus 23 agencias. Podrás filtrar por ubicación, modelo de planeación, año y semáforo, marcar existencia / color / batería por unidad, y cerrar el día con un reporte PDF de la agencia auditada con sus conformidades y no conformidades.</p>
     </div>
 
     <div id="content" style="display:none;">
@@ -454,7 +454,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
         <div class="load-more" id="loadMore" hidden>Cargando más unidades…</div>
       </div>
       <div class="pagination" id="pagination" aria-live="polite"></div>
-      <div class="footnote" id="auditFootnote">Un tono unido: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad conforme la revisas físicamente. El reporte PDF incluye solo la agencia y los filtros activos en pantalla, en una sola hoja.</div>
+      <div class="footnote" id="auditFootnote">Un tono unido: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad conforme la revisas físicamente. El reporte PDF incluye solo la agencia y los filtros activos en pantalla, con sus conformidades y no conformidades.</div>
 
       <div class="closure">
         <h3>Cierre de auditoría</h3>
@@ -952,8 +952,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     document.getElementById('auditMode').value = AppState.auditMode;
     document.getElementById('batteryHeader').classList.toggle('battery-col-disabled', noBattery);
     document.getElementById('auditFootnote').innerHTML = noBattery
-      ? 'Modalidad <b>Auditoría sin baterías</b>: valida <b>Existencia</b> y <b>Color</b>. La batería queda como no evaluada y no genera hallazgos. El reporte PDF incluye solo la agencia y los filtros activos, en una sola hoja.'
-      : 'Modalidad <b>Auditoría completa</b>: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad. El reporte PDF incluye solo la agencia y los filtros activos, en una sola hoja.';
+      ? 'Modalidad <b>Auditoría sin baterías</b>: valida <b>Existencia</b> y <b>Color</b>. La batería queda como no evaluada y no genera hallazgos. El reporte PDF incluye solo la agencia y los filtros activos, con sus conformidades y no conformidades.'
+      : 'Modalidad <b>Auditoría completa</b>: marca <b>Existencia</b>, <b>Color</b> y <b>Batería</b> por unidad. El reporte PDF incluye solo la agencia y los filtros activos, con sus conformidades y no conformidades.';
   }
 
   // ---------- filter controls ----------
