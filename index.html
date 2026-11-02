@@ -1161,11 +1161,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     }
   }
 
-  // ---------- PDF export (filtered agency, single letter sheet) ----------
-  // Each step trades readability for room; the first one that fits on one sheet wins.
-  var PDF_FIT_STEPS = [
-    {font:8, pad:3.2, groups:3}, {font:7.2, pad:2.5, groups:3}, {font:6.5, pad:1.9, groups:4}, {font:5.8, pad:1.4, groups:4}
-  ];
+  // ---------- PDF export (filtered agency, as many letter sheets as the list needs) ----------
   var PDF_COLORS = {
     navy:[22,29,46], ink:[20,23,28], muted:[98,106,120], border:[225,229,235],
     green:[15,122,61], greenBg:[223,245,230], red:[182,35,28],
@@ -1176,42 +1172,48 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   function buildReportData(scope){
     var noBattery = AppState.auditMode==='no_battery';
     var sinExistencia = 0;
-    var incidents = scope.records.filter(function(r){ return getStatus(r.id)==='hallazgo'; });
-    var rows = incidents.map(function(r, i){
+    function toRow(r, i){
       var c = AppState.checks[r.id] || {};
-      if(!c.existencia) sinExistencia++;
       return [ i+1, r.modelo, r.serie, r.anio, r.dias, r.semaforo,
         c.existencia ? 'OK' : 'FALTA',
         c.color ? 'OK' : 'FALTA',
         noBattery ? 'N/E' : (c.bateria ? 'OK' : 'FALTA'),
         c.obs || '' ];
+    }
+    var rows = scope.records.filter(function(r){ return getStatus(r.id)==='hallazgo'; }).map(function(r, i){
+      if(!(AppState.checks[r.id] || {}).existencia) sinExistencia++;
+      return toRow(r, i);
     });
-    // Conforming units are listed compactly (serial + model) so a 100% audit still documents what was checked.
-    var conformes = scope.records.filter(function(r){ return getStatus(r.id)==='conforme'; })
-      .map(function(r){ return { serie:r.serie, modelo:r.modelo }; });
+    // Conforming units get the same columns, numbered 1..n, so a 100% audit still documents every unit checked.
+    var confRows = scope.records.filter(function(r){ return getStatus(r.id)==='conforme'; }).map(toRow);
+    var agency = scope.agencies[0];
+    var testExcluded = AppState.hideTest ? AppState.records.filter(function(r){ return r.ubicacion===agency && isTestUnit(r); }).length : 0;
     var extra = activeExtraFilters();
     return {
-      agency: scope.agencies[0],
+      agency: agency,
       stats: computeStats(scope.records),
       sinExistencia: sinExistencia,
       rows: rows,
-      conformes: conformes,
+      confRows: confRows,
       noBattery: noBattery,
       modeLabel: noBattery ? 'Auditoría sin baterías' : 'Auditoría completa',
       dateLabel: fmtDateLabel(AppState.meta.dateKey||todayKey()),
       generatedLabel: new Date().toLocaleString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),
       metaLine: 'Archivo base: '+(AppState.meta.fileName||'Sin archivo')+'   ·   '+
-        (extra.length ? 'Filtros adicionales: '+extra.join(', ') : 'Alcance: todas las unidades de la agencia'),
+        (extra.length ? 'Filtros adicionales: '+extra.join(', ') : 'Alcance: todas las unidades de la agencia')+
+        (testExcluded ? '   ('+testExcluded+' motos de prueba excluidas)' : ''),
       comments: (AppState.finalComments||'').trim(),
       photos: AppState.photos || []
     };
   }
 
-  function buildReportPdf(data, step, withPhotos, allowOverflow){
+  function buildReportPdf(data){
     var C = PDF_COLORS;
     var doc = new window.jspdf.jsPDF({ unit:'pt', format:'letter' });
     var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
     var M = 36, CW = W - M*2;
+    var TOP = M + 8, BOTTOM = H - 34;   // content area on continuation pages; footer sits below BOTTOM
+    function room(y, needed){ if(y + needed > BOTTOM){ doc.addPage(); return TOP; } return y; }
 
     // header band
     doc.setFillColor.apply(doc, C.navy); doc.rect(0, 0, W, 70, 'F');
@@ -1252,66 +1254,29 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       doc.text(k.l, x+8, kY+33);
     });
 
-    // bottom block, laid out upward from the signatures
-    var footerY = H - 16;
-    var sigY = H - 58;
-    var cursor = sigY - 34;
-    var photoPlan = null, commentPlan = null;
-    if(withPhotos && data.photos.length){
-      var thumbH = 74, x = 0, items = [];
-      for(var i=0; i<data.photos.length; i++){
-        var w;
-        try{ var p = doc.getImageProperties(data.photos[i].dataUrl); w = Math.min(thumbH*p.width/p.height, 132); }
-        catch(err){ continue; }
-        if(x + w > CW) break;
-        items.push({photo:data.photos[i], x:x, w:w});
-        x += w + 6;
-      }
-      if(items.length){
-        photoPlan = { top: cursor - thumbH - 14, h: thumbH, items: items };
-        cursor = photoPlan.top - 10;
-      }
-    }
-    var photoNoteY = null;
-    if(data.photos.length && !photoPlan){
-      photoNoteY = cursor;
-      cursor -= 16;
-    }
-    if(data.comments){
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
-      var lines = doc.splitTextToSize(data.comments, CW-16);
-      if(lines.length > 6){ lines = lines.slice(0,6); lines[5] = lines[5].replace(/\s*\S*$/, '') + ' …'; }
-      var boxH = 20 + lines.length*9.5;
-      commentPlan = { top: cursor - boxH, h: boxH, lines: lines };
-      cursor = commentPlan.top - 10;
-    }
-    var tableLimit = cursor;
-
-    // non-conformities section
-    var secY = kY + kH + 20;
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
-    doc.text('No conformidades ('+data.rows.length+')', M, secY);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
-    doc.text('FALTA = no cumple'+(data.noBattery ? ';  N/E = batería no evaluada' : '')+
-      (s.pendiente ? ';  '+s.pendiente+' unidades pendientes no se listan' : ''), W-M, secY, {align:'right'});
-
-    if(data.rows.length){
+    // One vertical list per result; autoTable continues it onto new sheets and repeats the header row.
+    function section(y, title, note, rows, headFill, headText){
+      y = room(y, 60);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
+      doc.text(title, M, y);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
+      doc.text(note, W-M, y, {align:'right'});
       doc.autoTable({
-        startY: secY + 6,
-        margin: {left:M, right:M, top:M, bottom: H - tableLimit},
+        startY: y + 6,
+        margin: {left:M, right:M, top:TOP, bottom: H - BOTTOM},
         head: [['#','Modelo','Serie','Año','Días','Semáforo','Existencia','Color','Batería','Observaciones']],
-        body: data.rows,
+        body: rows,
         theme: 'plain',
-        styles: {fontSize:step.font, cellPadding:step.pad, textColor:C.ink, lineColor:C.border, lineWidth:{bottom:0.5}, overflow:'linebreak', valign:'middle'},
-        headStyles: {fillColor:C.navy, textColor:255, fontStyle:'bold', fontSize:step.font-0.4},
+        styles: {fontSize:7.8, cellPadding:3, textColor:C.ink, lineColor:C.border, lineWidth:{bottom:0.5}, overflow:'linebreak', valign:'middle'},
+        headStyles: {fillColor:headFill, textColor:headText, fontStyle:'bold', fontSize:7.4},
         alternateRowStyles: {fillColor:C.zebra},
         columnStyles: {
-          0:{cellWidth:18, halign:'center', textColor:C.muted},
+          0:{cellWidth:22, halign:'center', textColor:C.muted},
           2:{font:'courier', cellWidth:94},
           3:{cellWidth:28, halign:'center'}, 4:{cellWidth:28, halign:'center'},
           5:{cellWidth:46, fontStyle:'bold'},
           6:{cellWidth:46, halign:'center'}, 7:{cellWidth:36, halign:'center'}, 8:{cellWidth:40, halign:'center'},
-          9:{cellWidth:110}
+          9:{cellWidth:106}
         },
         didParseCell: function(cell){
           if(cell.section!=='body') return;
@@ -1322,72 +1287,65 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
           }
         }
       });
+      return doc.lastAutoTable.finalY + 24;
+    }
+
+    var y = kY + kH + 22;
+    var ncNote = 'FALTA = no cumple'+(data.noBattery ? ';  N/E = batería no evaluada' : '')+
+      (s.pendiente ? ';  '+s.pendiente+' unidades pendientes no se listan' : '');
+    if(data.rows.length){
+      y = section(y, 'No conformidades ('+data.rows.length+')', ncNote, data.rows, C.navy, 255);
     } else {
-      doc.setFillColor.apply(doc, C.greenBg); doc.roundedRect(M, secY+8, CW, 24, 4, 4, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor.apply(doc, C.green);
-      doc.text(s.pendiente ? 'Sin no conformidades en las unidades revisadas.' : 'Sin no conformidades: todas las unidades están conformes.', M+12, secY+24);
-    }
-
-    // conformities section: compact, filled top-to-bottom then left-to-right across N column groups
-    if(data.conformes.length && (doc.internal.getNumberOfPages() === 1 || allowOverflow)){
-      var confY = (data.rows.length ? doc.lastAutoTable.finalY : secY + 32) + 18;
       doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
-      doc.text('Conformidades ('+data.conformes.length+')', M, confY);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
-      doc.text('Existencia, color'+(data.noBattery ? '' : ' y batería')+' verificados', W-M, confY, {align:'right'});
-      var g = step.groups, perCol = Math.ceil(data.conformes.length / g), head = [], body = [];
-      for(var gi=0; gi<g; gi++) head.push('#','Serie','Modelo');
-      for(var ri=0; ri<perCol; ri++){
-        var line = [];
-        for(var gj=0; gj<g; gj++){
-          var k = gj*perCol + ri, it = data.conformes[k];
-          line.push(it ? k+1 : '', it ? it.serie : '', it ? it.modelo : '');
-        }
-        body.push(line);
-      }
-      var groupW = CW / g, confCols = {};
-      for(var gk=0; gk<g; gk++){
-        confCols[gk*3] = {cellWidth:16, halign:'center', textColor:C.muted};
-        confCols[gk*3+1] = {cellWidth:Math.min(92, groupW*0.52), font:'courier'};
-        confCols[gk*3+2] = {cellWidth:groupW - 16 - Math.min(92, groupW*0.52)};
-      }
-      doc.autoTable({
-        startY: confY + 6,
-        margin: {left:M, right:M, top:M, bottom: H - tableLimit},
-        head: [head],
-        body: body,
-        theme: 'plain',
-        styles: {fontSize:step.font-0.4, cellPadding:Math.max(1, step.pad-0.8), textColor:C.ink, lineColor:C.border, lineWidth:{bottom:0.4}, overflow:'ellipsize', valign:'middle'},
-        headStyles: {fillColor:C.greenBg, textColor:C.green, fontStyle:'bold', fontSize:step.font-0.8},
-        columnStyles: confCols
-      });
+      doc.text('No conformidades (0)', M, y);
+      doc.setFillColor.apply(doc, C.greenBg); doc.roundedRect(M, y+8, CW, 24, 4, 4, 'F');
+      doc.setFontSize(9); doc.setTextColor.apply(doc, C.green);
+      doc.text(s.pendiente ? 'Sin no conformidades en las unidades revisadas.' : 'Sin no conformidades: todas las unidades están conformes.', M+12, y+24);
+      y += 56;
     }
-    if(doc.internal.getNumberOfPages() > 1 && !allowOverflow) return { doc:doc, fits:false };
+    if(data.confRows.length){
+      y = section(y, 'Conformidades ('+data.confRows.length+')',
+        'Existencia, color'+(data.noBattery ? '' : ' y batería')+' verificados', data.confRows, C.greenBg, C.green);
+    }
 
-    // final comments
-    if(commentPlan){
+    // final comments (full text; moves to a new sheet if it does not fit)
+    if(data.comments){
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      var lines = doc.splitTextToSize(data.comments, CW-16);
+      var boxH = 22 + lines.length*10;
+      y = room(y, Math.min(boxH, BOTTOM-TOP));
       doc.setDrawColor.apply(doc, C.border); doc.setFillColor.apply(doc, C.zebra);
-      doc.roundedRect(M, commentPlan.top, CW, commentPlan.h, 4, 4, 'FD');
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc, C.ink);
-      doc.text('Comentarios finales', M+8, commentPlan.top+12);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
-      doc.text(commentPlan.lines, M+8, commentPlan.top+23, {lineHeightFactor:1.22});
+      doc.roundedRect(M, y-10, CW, boxH, 4, 4, 'FD');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor.apply(doc, C.ink);
+      doc.text('Comentarios finales', M+8, y+2);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text(lines, M+8, y+14, {lineHeightFactor:1.25});
+      y += boxH + 16;
     }
 
-    // photo evidence strip
-    if(photoPlan){
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc, C.ink);
-      doc.text('Evidencia fotográfica ('+photoPlan.items.length+' de '+data.photos.length+')', M, photoPlan.top+8);
-      photoPlan.items.forEach(function(it){
-        try{ doc.addImage(it.photo.dataUrl, 'JPEG', M+it.x, photoPlan.top+14, it.w, photoPlan.h); }
-        catch(err){ console.error('addImage error', err); }
+    // photo evidence, every photo, in rows that wrap onto new sheets
+    if(data.photos.length){
+      var thumbH = 120, gap = 8;
+      y = room(y, thumbH + 24);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
+      doc.text('Evidencia fotográfica ('+data.photos.length+')', M, y);
+      y += 8;
+      var x = 0;
+      data.photos.forEach(function(photo){
+        var w;
+        try{ var p = doc.getImageProperties(photo.dataUrl); w = Math.min(thumbH*p.width/p.height, CW); }
+        catch(err){ console.error('addImage error', err); return; }
+        if(x > 0 && x + w > CW){ x = 0; y += thumbH + gap; }
+        if(y + thumbH > BOTTOM){ doc.addPage(); y = TOP; }
+        try{ doc.addImage(photo.dataUrl, 'JPEG', M+x, y, w, thumbH); }catch(err){ console.error('addImage error', err); }
+        x += w + gap;
       });
-    } else if(photoNoteY !== null){
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
-      doc.text(data.photos.length+' foto(s) de evidencia guardadas en el sistema (no caben en la hoja).', M, photoNoteY);
+      y += thumbH + 30;
     }
 
-    // signatures
+    // signatures always together, at the bottom of the last sheet
+    var sigY = BOTTOM - 30;
+    if(y + 40 > sigY){ doc.addPage(); }
     var lineW = (CW - 60) / 2, rightX = M + lineW + 60;
     doc.setDrawColor(80); doc.setLineWidth(0.6);
     doc.line(M, sigY, M+lineW, sigY);
@@ -1398,8 +1356,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor.apply(doc, C.muted);
     doc.text('Firma de conformidad y conocimiento de los resultados registrados.', W/2, sigY+23, {align:'center'});
 
-    // footer
-    var pageCount = doc.internal.getNumberOfPages();
+    // footer on every sheet
+    var footerY = H - 16, pageCount = doc.internal.getNumberOfPages();
     for(var pg=1; pg<=pageCount; pg++){
       doc.setPage(pg);
       doc.setDrawColor.apply(doc, C.border); doc.setLineWidth(0.5); doc.line(M, footerY-9, W-M, footerY-9);
@@ -1407,22 +1365,14 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       doc.text('Auditoría Semáforo PEPS VENTO Región 6  ·  '+data.agency, M, footerY);
       doc.text('Hoja '+pg+' de '+pageCount, W-M, footerY, {align:'right'});
     }
-    return { doc:doc, fits:true };
+    return doc;
   }
 
   function generateReport(){
     var scope = reportScope();
     if(!scope.ready) return null;
     var data = buildReportData(scope);
-    var tries = data.photos.length ? [true,false] : [false];
-    for(var i=0; i<PDF_FIT_STEPS.length; i++){
-      for(var j=0; j<tries.length; j++){
-        var r = buildReportPdf(data, PDF_FIT_STEPS[i], tries[j]);
-        if(r.fits) return { doc:r.doc, data:data };
-      }
-    }
-    alert('Hay demasiadas unidades ('+data.rows.length+' no conformes y '+data.conformes.length+' conformes) para una sola hoja; el reporte continuará en una segunda hoja.');
-    return { doc: buildReportPdf(data, PDF_FIT_STEPS[PDF_FIT_STEPS.length-1], false, true).doc, data:data };
+    return { doc: buildReportPdf(data), data: data };
   }
 
   document.getElementById('pdfBtn').addEventListener('click', function(){
