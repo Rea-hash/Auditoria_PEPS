@@ -173,19 +173,20 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
   background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
   overflow:auto; box-shadow:var(--shadow);
 }
-table{border-collapse:collapse; width:100%; min-width:1080px; font-size:13px;}
+table{border-collapse:collapse; width:100%; font-size:13px;}
 thead th{
   position:sticky; top:0; background:#f7f8fa; border-bottom:1px solid var(--border);
-  text-align:left; padding:10px 10px; font-size:11.5px; color:var(--muted);
+  text-align:left; padding:10px 8px; font-size:11.5px; color:var(--muted);
   text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;
 }
-tbody td{padding:8px 10px; border-bottom:1px solid #eef0f3; vertical-align:middle;}
+tbody td{padding:8px; border-bottom:1px solid #eef0f3; vertical-align:middle;}
 tbody tr:hover{background:#fafbfd;}
 tbody tr.row-hallazgo{background:#fff8f7;}
 tbody tr.row-hallazgo:hover{background:#fdefed;}
-td.ubic{max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+td.ubic{max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+/* With one agency filtered the column repeats the same value, so it is hidden. */
+table.one-agency .col-ubic, table.one-agency td.ubic{display:none;}
 td.serie{font-family:'JetBrains Mono',monospace; font-size:12px; color:#333;}
-td.c-modelo{white-space:nowrap;}
 td center, .cbcell{text-align:center;}
 input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--green);}
 .badge{
@@ -201,7 +202,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 .status.hallazgo{background:var(--red-bg); color:var(--red);}
 .status.pendiente{background:#eef0f3; color:var(--muted);}
 .obs-input{
-  width:140px; border:1px solid var(--border); border-radius:var(--r-control); padding:6px 8px; font-size:13px; font-family:inherit;
+  width:100%; min-width:96px; border:1px solid var(--border); border-radius:var(--r-control); padding:6px 8px; font-size:13px; font-family:inherit;
 }
 .ok-btn{
   border:1px solid var(--green); color:var(--green); background:#fff;
@@ -290,13 +291,39 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 }
 
 @media (max-width: 980px){
-  .layout{flex-direction:column;}
+  .layout{flex-direction:column; align-items:stretch;}
   .sidebar{width:100%; flex:none; position:static; padding-bottom:6px;}
   .kpis{grid-template-columns:repeat(2,1fr);}
   main{padding:16px;}
 }
 
-/* ---------- Phone: filters stack, table rows become cards ---------- */
+/* ---------- Card view: fitTable() adds .as-cards when the table doesn't fit its container ---------- */
+.table-wrap.as-cards thead{display:none;}
+.table-wrap.as-cards tbody{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; padding:12px;}
+.table-wrap.as-cards tbody tr{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:4px 8px; align-content:start;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
+  padding:12px; box-shadow:var(--shadow);
+}
+.table-wrap.as-cards tbody tr.row-hallazgo{border-color:#f2c2be; background:#fff8f7;}
+.table-wrap.as-cards tbody tr:hover{background:var(--surface);}
+.table-wrap.as-cards tbody tr.row-hallazgo:hover{background:#fff8f7;}
+.table-wrap.as-cards tbody td{display:block; border:none; padding:2px 0; min-width:0;}
+.table-wrap.as-cards tbody td[data-label]::before{
+  content:attr(data-label); display:block; font-size:11px; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px;
+}
+.table-wrap.as-cards td.ubic{grid-column:1 / -1; max-width:none; white-space:normal; font-size:12px; color:var(--muted);}
+.table-wrap.as-cards table.one-agency td.ubic{display:none;}
+.table-wrap.as-cards td.c-modelo{grid-column:1 / 3; grid-row:2; font-weight:700; font-size:15px;}
+.table-wrap.as-cards td.c-status{grid-column:3; grid-row:2; text-align:right; align-self:start;}
+.table-wrap.as-cards td.serie{grid-column:1 / -1; font-size:13px;}
+.table-wrap.as-cards td.cbcell{text-align:left;}
+.table-wrap.as-cards td.cbcell .cb-hit{justify-content:flex-start; min-width:0; width:100%;}
+.table-wrap.as-cards td.c-obs, .table-wrap.as-cards td.c-ok, .table-wrap.as-cards td.empty-row{grid-column:1 / -1;}
+.table-wrap.as-cards .ok-btn{width:100%; min-height:44px; font-size:13px;}
+
+/* ---------- Phone: filters stack, cards sit directly on the page ---------- */
 @media (max-width: 760px){
   .topbar{position:static; padding:14px 16px;}
   .topbar-actions{margin-left:0; width:100%;}
@@ -305,34 +332,9 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   .filters .field{flex:1 1 100%;}
   .field select, .field input[type=text], .field.search input, .audit-mode-field select{min-width:0; width:100%; font-size:16px;}
   .filters .meta-tag{margin-left:0;}
-  .table-wrap{background:none; border:none; box-shadow:none; overflow:visible;}
-  table{min-width:0;}
-  thead{display:none;}
-  tbody{display:flex; flex-direction:column; gap:10px;}
-  tbody tr{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:4px 8px;
-    background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
-    padding:12px; box-shadow:var(--shadow);
-  }
-  tbody tr.row-hallazgo{border-color:#f2c2be;}
-  tbody tr:hover{background:var(--surface);}
-  tbody tr.row-hallazgo:hover{background:#fff8f7;}
-  tbody td{display:block; border:none; padding:2px 0; min-width:0;}
-  tbody td[data-label]::before{
-    content:attr(data-label); display:block; font-size:11px; font-weight:700; color:var(--muted);
-    text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px;
-  }
-  td.ubic{grid-column:1 / -1; max-width:none; white-space:normal; font-size:12px; color:var(--muted);}
-  td.c-modelo{grid-column:1 / 3; grid-row:2; font-weight:700; font-size:15px; white-space:normal;}
-  td.c-status{grid-column:3; grid-row:2; text-align:right; align-self:start;}
-  td.serie{grid-column:1 / -1; font-size:13px;}
-  td.cbcell{text-align:left;}
-  td.cbcell .cb-hit{justify-content:flex-start; min-width:0; width:100%;}
-  td.c-obs{grid-column:1 / -1;}
-  .obs-input{width:100%; font-size:16px;}
-  td.c-ok{grid-column:1 / -1;}
-  .ok-btn{width:100%; min-height:44px; font-size:13px;}
-  td.empty-row{grid-column:1 / -1;}
+  .table-wrap.as-cards{background:none; border:none; box-shadow:none;}
+  .table-wrap.as-cards tbody{padding:0;}
+  .obs-input{font-size:16px;}
   .pagination{justify-content:space-between; padding:12px 0; flex-wrap:wrap;}
 }
 </style>
@@ -416,7 +418,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
         <table>
           <thead>
             <tr>
-              <th>Agencia</th>
+              <th class="col-ubic">Agencia</th>
               <th>Modelo</th>
               <th>Serie</th>
               <th>Año</th>
@@ -763,8 +765,31 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       '<button id="nextPage" '+(AppState.page>=totalPages?'disabled':'')+'>Siguiente ›</button>';
     document.getElementById('prevPage').addEventListener('click', function(){ AppState.page--; renderTable(); });
     document.getElementById('nextPage').addEventListener('click', function(){ AppState.page++; renderTable(); });
+    document.querySelector('.table-wrap table').classList.toggle('one-agency', !!AppState.filters.ubicacion);
+    fitTable();
     updateReportScopeUI();
   }
+
+  // Switch to the card view whenever the full table would overflow the space it actually has
+  // (sidebar, tablet, phone, zoom), instead of relying on fixed breakpoints.
+  function fitTable(){
+    var wrap = document.querySelector('.table-wrap');
+    if(!wrap.clientWidth) return;
+    wrap.classList.remove('as-cards');
+    var table = wrap.querySelector('table');
+    if(table.scrollWidth > wrap.clientWidth + 1) wrap.classList.add('as-cards');
+  }
+  (function(){
+    var wrap = document.querySelector('.table-wrap'), lastW = 0;
+    if(window.ResizeObserver){
+      new ResizeObserver(function(entries){
+        var w = Math.round(entries[0].contentRect.width);
+        if(w !== lastW){ lastW = w; fitTable(); }
+      }).observe(wrap);
+    } else {
+      window.addEventListener('resize', fitTable);
+    }
+  })();
 
   function rowHtml(r){
     var c = AppState.checks[r.id] || {existencia:false,color:false,bateria:false,obs:''};
