@@ -29,6 +29,9 @@
   --accent:#2454c7;
   --accent-bg:#e7edfb;
   --radius:10px;
+  /* One radius scale: controls 8px, panels/cards 12px, badges and bars full pill. */
+  --r-control:8px;
+  --r-panel:12px;
   --shadow:0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.06);
 }
 *{box-sizing:border-box;}
@@ -64,7 +67,7 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif; font-weight:800; margin:0;}
 .brand{display:flex; align-items:center; gap:12px;}
 .semaforo-icon{
   width:26px; display:flex; flex-direction:column; gap:3px;
-  background:#0c0f17; padding:6px 6px; border-radius:7px;
+  background:#0c0f17; padding:6px 6px; border-radius:var(--r-control);
   border:1px solid rgba(255,255,255,.12);
 }
 .semaforo-icon span{width:100%; padding-top:100%; border-radius:50%; display:block;}
@@ -79,14 +82,14 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif; font-weight:800; margin:0;}
   display:inline-flex; align-items:center; gap:8px;
   background:#fff; color:var(--navy);
   font-weight:700; font-size:13.5px;
-  padding:9px 14px; border-radius:8px; cursor:pointer;
+  padding:9px 14px; border-radius:var(--r-control); cursor:pointer;
   border:none;
 }
 .file-btn input{position:absolute; inset:0; opacity:0; cursor:pointer;}
 .btn{
   display:inline-flex; align-items:center; gap:7px;
   font-weight:700; font-size:13.5px;
-  padding:9px 14px; border-radius:8px; cursor:pointer;
+  padding:9px 14px; border-radius:var(--r-control); cursor:pointer;
   border:1px solid rgba(255,255,255,.22);
   background:rgba(255,255,255,.06); color:#fff;
 }
@@ -106,14 +109,14 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif; font-weight:800; margin:0;}
 .sidebar h3{font-size:14px; margin-bottom:10px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase;}
 .history-list{display:flex; flex-direction:column; gap:8px;}
 .history-item{
-  background:var(--surface); border:1px solid var(--border); border-radius:9px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
   padding:10px 12px; font-size:13px; box-shadow:var(--shadow);
 }
 .history-item .d{font-weight:700; font-family:'Barlow Condensed'; font-size:16px;}
 .history-item .m{color:var(--muted); font-size:11.5px; margin:2px 0 8px;}
 .history-item button{
   font-size:11.5px; border:none; background:var(--accent-bg); color:var(--accent);
-  padding:5px 9px; border-radius:6px; cursor:pointer; font-weight:700;
+  padding:5px 9px; border-radius:var(--r-control); cursor:pointer; font-weight:700;
 }
 .empty-hist{font-size:12.5px; color:var(--muted); line-height:1.5;}
 
@@ -121,7 +124,7 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
 
 /* ---------- Empty state ---------- */
 .empty-state{
-  background:var(--surface); border:1.5px dashed var(--border); border-radius:14px;
+  background:var(--surface); border:1.5px dashed var(--border); border-radius:var(--r-panel);
   padding:60px 30px; text-align:center; color:var(--muted);
 }
 .empty-state h2{color:var(--ink); font-size:26px; margin-bottom:8px;}
@@ -130,7 +133,7 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
 /* ---------- KPIs ---------- */
 .kpis{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:16px;}
 .kpi{
-  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
   padding:12px 14px; box-shadow:var(--shadow);
 }
 .kpi .n{font-family:'Barlow Condensed'; font-weight:800; font-size:28px; line-height:1;}
@@ -138,19 +141,19 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
 .kpi.conforme .n{color:var(--green);}
 .kpi.hallazgo .n{color:var(--red);}
 .kpi.pendiente .n{color:var(--muted);}
-.kpi.avance .bar{height:6px; background:var(--border); border-radius:4px; margin-top:8px; overflow:hidden;}
+.kpi.avance .bar{height:6px; background:var(--border); border-radius:99px; margin-top:8px; overflow:hidden;}
 .kpi.avance .bar i{display:block; height:100%; background:var(--accent);}
 
 /* ---------- Filters ---------- */
 .filters{
   display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
-  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
   padding:14px; margin-bottom:16px; box-shadow:var(--shadow);
 }
 .field{display:flex; flex-direction:column; gap:5px;}
 .field label{font-size:12px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
 .field select, .field input[type=text]{
-  border:1px solid var(--border); border-radius:8px; padding:8px 10px;
+  border:1px solid var(--border); border-radius:var(--r-control); padding:8px 10px;
   font-size:13.5px; font-family:inherit; min-width:170px; background:#fbfcfd;
 }
 .field.search input{min-width:200px;}
@@ -167,7 +170,7 @@ main{flex:1; min-width:0; padding:20px 22px 60px;}
 
 /* ---------- Table ---------- */
 .table-wrap{
-  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
   overflow:auto; box-shadow:var(--shadow);
 }
 table{border-collapse:collapse; width:100%; min-width:1080px; font-size:13px;}
@@ -198,17 +201,17 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 .status.hallazgo{background:var(--red-bg); color:var(--red);}
 .status.pendiente{background:#eef0f3; color:var(--muted);}
 .obs-input{
-  width:140px; border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:13px; font-family:inherit;
+  width:140px; border:1px solid var(--border); border-radius:var(--r-control); padding:6px 8px; font-size:13px; font-family:inherit;
 }
 .ok-btn{
   border:1px solid var(--green); color:var(--green); background:#fff;
-  font-size:12px; font-weight:700; padding:6px 10px; border-radius:6px; cursor:pointer; white-space:nowrap;
+  font-size:12px; font-weight:700; padding:6px 10px; border-radius:var(--r-control); cursor:pointer; white-space:nowrap;
 }
 .ok-btn:hover{background:var(--green-bg);}
 
 .pagination{display:flex; align-items:center; gap:10px; padding:12px 14px; font-size:12.5px; color:var(--muted);}
 .pagination button{
-  border:1px solid var(--border); background:#fff; border-radius:7px; padding:6px 11px;
+  border:1px solid var(--border); background:#fff; border-radius:var(--r-control); padding:6px 11px;
   cursor:pointer; font-weight:700; font-size:12.5px;
 }
 .pagination button:disabled{opacity:.4; cursor:not-allowed;}
@@ -217,13 +220,13 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 
 /* ---------- Closure section ---------- */
 .closure{
-  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
   padding:18px; margin-top:18px; box-shadow:var(--shadow);
 }
 .closure h3{font-size:19px; margin-bottom:12px;}
 .closure .field{width:100%; margin-bottom:16px;}
 .closure textarea{
-  width:100%; border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+  width:100%; border:1px solid var(--border); border-radius:var(--r-control); padding:10px 12px;
   font-size:13.5px; font-family:inherit; resize:vertical; min-height:90px;
 }
 .file-btn.small{padding:8px 13px; font-size:12.5px; background:var(--accent-bg); color:var(--accent);}
@@ -233,7 +236,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:14px;
 }
 .photo-card{
-  border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fbfcfd;
+  border:1px solid var(--border); border-radius:var(--r-panel); overflow:hidden; background:#fbfcfd;
   position:relative;
 }
 .photo-card img{width:100%; height:120px; object-fit:cover; display:block;}
@@ -254,7 +257,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 .report-scope{
   display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   font-size:13px; line-height:1.5; color:var(--amber);
-  background:var(--amber-bg); border:1px solid #f3dcae; border-radius:10px;
+  background:var(--amber-bg); border:1px solid #f3dcae; border-radius:var(--r-panel);
   padding:10px 14px; margin-bottom:12px;
 }
 .report-scope.ready{color:var(--green); background:var(--green-bg); border-color:#bfe8cc;}
@@ -270,7 +273,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
 
 /* ---------- Touch targets ---------- */
 /* The checkbox stays 20px visually; its label wrapper is the 44px hit area. */
-.cb-hit{display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; cursor:pointer; border-radius:8px;}
+.cb-hit{display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; cursor:pointer; border-radius:var(--r-control);}
 .cb-hit:hover{background:rgba(15,122,61,.06);}
 .cb-hit input[type=checkbox]{width:20px; height:20px;}
 .battery-col-disabled .cb-hit{cursor:not-allowed;}
@@ -308,7 +311,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
   tbody{display:flex; flex-direction:column; gap:10px;}
   tbody tr{
     display:grid; grid-template-columns:repeat(3,1fr); gap:4px 8px;
-    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel);
     padding:12px; box-shadow:var(--shadow);
   }
   tbody tr.row-hallazgo{border-color:#f2c2be;}
@@ -1040,9 +1043,9 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       var extra = activeExtraFilters();
       btn.title = 'Generar reporte de incidencias de '+scope.agencies[0];
       el.className = 'report-scope ready';
-      el.innerHTML = '<b>Reporte PDF:</b> '+esc(scope.agencies[0])+' · '+stats.total+' unidades · '+
-        stats.hallazgo+' incidencias'+(stats.pendiente ? ' · '+stats.pendiente+' pendientes' : '')+
-        (extra.length ? ' <span class="muted">· con filtros: '+esc(extra.join(', '))+'</span>' : '');
+      el.innerHTML = '<b>Reporte PDF de '+esc(scope.agencies[0])+':</b> '+stats.total+' unidades, '+
+        stats.hallazgo+' incidencias'+(stats.pendiente ? ' y '+stats.pendiente+' pendientes' : '')+'.'+
+        (extra.length ? ' <span class="muted">Filtros: '+esc(extra.join(', '))+'.</span>' : '');
     } else {
       btn.title = 'Selecciona una agencia para generar el reporte';
       el.className = 'report-scope';
@@ -1087,7 +1090,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       modeLabel: noBattery ? 'Auditoría sin baterías' : 'Auditoría completa',
       dateLabel: fmtDateLabel(AppState.meta.dateKey||todayKey()),
       generatedLabel: new Date().toLocaleString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),
-      metaLine: 'Archivo base: '+(AppState.meta.fileName||'—')+'   ·   '+
+      metaLine: 'Archivo base: '+(AppState.meta.fileName||'Sin archivo')+'   ·   '+
         (extra.length ? 'Filtros adicionales: '+extra.join(', ') : 'Alcance: todas las unidades de la agencia'),
       comments: (AppState.finalComments||'').trim(),
       photos: AppState.photos || []
@@ -1103,7 +1106,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     // header band
     doc.setFillColor.apply(doc, C.navy); doc.rect(0, 0, W, 70, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(159,176,217);
-    doc.text('VENTO · REGIÓN 6 / MORELOS  ·  AUDITORÍA SEMÁFORO PEPS', M, 21);
+    doc.text('VENTO REGIÓN 6 / MORELOS  ·  AUDITORÍA SEMÁFORO PEPS', M, 21);
     doc.setFontSize(16); doc.setTextColor(255);
     doc.text('Reporte de incidencias', M, 41);
     doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
@@ -1123,7 +1126,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     var kpis = [
       {v:s.total, l:'Unidades en alcance', c:C.ink},
       {v:s.conforme, l:'Conformes', c:C.green},
-      {v:s.hallazgo, l:'Incidencias · '+pct+'%', c:s.hallazgo ? C.red : C.ink},
+      {v:s.hallazgo, l:'Incidencias ('+pct+'%)', c:s.hallazgo ? C.red : C.ink},
       {v:data.sinExistencia, l:'Sin existencia', c:data.sinExistencia ? C.red : C.ink},
       {v:s.pendiente, l:'Pendientes', c:C.muted},
       {v:s.avance+'%', l:'Avance de revisión', c:C.accent}
@@ -1179,8 +1182,8 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc, C.ink);
     doc.text('Detalle de incidencias ('+data.rows.length+')', M, secY);
     doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, C.muted);
-    doc.text('FALTA = no cumple'+(data.noBattery ? '  ·  N/E = batería no evaluada' : '')+
-      (s.pendiente ? '  ·  '+s.pendiente+' unidades pendientes no se listan' : ''), W-M, secY, {align:'right'});
+    doc.text('FALTA = no cumple'+(data.noBattery ? ';  N/E = batería no evaluada' : '')+
+      (s.pendiente ? ';  '+s.pendiente+' unidades pendientes no se listan' : ''), W-M, secY, {align:'right'});
 
     if(data.rows.length){
       doc.autoTable({
@@ -1256,7 +1259,7 @@ input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(-
       doc.setPage(pg);
       doc.setDrawColor.apply(doc, C.border); doc.setLineWidth(0.5); doc.line(M, footerY-9, W-M, footerY-9);
       doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(140);
-      doc.text('VENTO Región 6 · Auditoría Semáforo PEPS · '+data.agency, M, footerY);
+      doc.text('Auditoría Semáforo PEPS VENTO Región 6  ·  '+data.agency, M, footerY);
       doc.text('Hoja '+pg+' de '+pageCount, W-M, footerY, {align:'right'});
     }
     return { doc:doc, fits:true };
